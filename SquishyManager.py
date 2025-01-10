@@ -113,11 +113,12 @@ while(True):
     if prompt1 == "4": # Squishy Manager Info
         clear(True)
         print(NAME_MANAGER)
-        print("Version: '" + VERSION + "'")
+        print("Version " + VERSION)
+        print()
         print("Executible Directory: '" + COOP_DIR + "'")
-        print("   Executible Exists: " + str(os.path.isfile(COOP_DIR)))
+        print(" Executible Exists: " + str(os.path.isfile(COOP_DIR)))
         print("Appdata Directory: '" + APPDATA_DIR + "'")
-        print("   Directory Exists: " + str(os.path.isdir(APPDATA_DIR)))
+        print(" Directory Exists: " + str(os.path.isdir(APPDATA_DIR)))
         print("")
         input("Press Enter to return to " + NAME_MAIN_MENU)
     if prompt1 == "5": # Exit
