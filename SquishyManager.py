@@ -7,9 +7,13 @@ from datetime import datetime
 from os import system, name
 
 # Define Constants
+NAME_SM64COOPDX = "SM64CoopDX"
+NAME_MANAGER = "Squishy " + NAME_SM64COOPDX + " Manager"
+NAME_MAIN_MENU = "Main Options"
+
 USER_DIR = str(Path.home())
 SAVE_DIR = "SquishyCoopManager.pik"
-VERSION = "v1 (In-Dev)"
+VERSION = "1 (In-Dev)"
 APPDATA_DIR = USER_DIR + "\\AppData\\Roaming\\sm64coopdx\\mods"
 DATE = datetime.now().strftime("%m/%d/%Y")
 
@@ -23,7 +27,7 @@ def clear(header):
         
     if header:
         # Header
-        header = "Squishy CoopDX Manager " + VERSION + " - " + DATE
+        header = NAME_MANAGER + " v" + VERSION + " - " + DATE
         headerBreak = ""
         while len(headerBreak) < len(header):
             headerBreak = headerBreak + "-"
@@ -43,46 +47,54 @@ def read_or_new_pickle(path, default):
         pickle.dump(default, f)
     return default
 
-coopDir = read_or_new_pickle(SAVE_DIR, USER_DIR + '\\Downloads\\sm64coopdx\\sm64coopdx.exe')
+COOP_DIR = read_or_new_pickle(SAVE_DIR, USER_DIR + '\\Downloads\\sm64coopdx\\sm64coopdx.exe')
 
 def config_coop_dir():
-    print("Please enter a new Directory to use for CoopDX")
+    print("Please enter a new Directory to use for " + NAME_SM64COOPDX)
+    print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
         inputDir = input()
         print(inputDir)
         if os.path.isfile(inputDir):
-            pickle.dump(coopDir, open(SAVE_DIR, "wb"))
-            return inputDir
+            pickle.dump(COOP_DIR, open(SAVE_DIR, "wb"))
+            COOP_DIR = inputDir
+            return True
+        elif inputDir == "back":
+            return False
         else:
             print("Directory not found, please enter a valid directory")
 
 # Main Options
 while(True):
     clear(True)
-    print("Main Options:")
-    print("1. Open SM64CoopDX")
+    print(NAME_MAIN_MENU + ":")
+    print("1. Open " + NAME_SM64COOPDX)
     print("2. Configure Directory")
     print("3. Mod Options")
-    print("4. Close Program")
+    print("4. " + NAME_MANAGER + " Info")
+    print("5. Close Program")
 
     prompt1 = input()
     if prompt1 == "1": # Open Coop
         while(True):
             clear(True)
-            if os.path.isfile(coopDir):
-                print("Opening from Directory: '" + coopDir + "'")
-                os.startfile(coopDir)
+            if os.path.isfile(COOP_DIR):
+                print("Opening from Directory: '" + COOP_DIR + "'")
+                os.startfile(COOP_DIR)
                 break
             else:
-                print("CoopDX not found at Directory '" + coopDir + "'")
-                coopDir = config_coop_dir()
-        break
+                print(NAME_SM64COOPDX + " not found at Directory '" + COOP_DIR + "'")
+                if not config_coop_dir():
+                    break
     if prompt1 == "2": # Set Coop Directory
-        config_coop_dir()
+        clear(True)
+        while(True):
+            if not config_coop_dir():
+                break
     if prompt1 == "3": # Mod Options
         clear(True)
         if not os.path.isdir(APPDATA_DIR):
-            print("Appdata Directory does not exist, please open CoopDX first!")
+            print("Appdata Directory does not exist, please open " + NAME_SM64COOPDX + " first!")
             input("Press Enter to return to Main Options")
             clear(False)
         else:
@@ -98,7 +110,17 @@ while(True):
                     os.startfile(APPDATA_DIR)
                 if prompt2 == "4":
                     break
-    if prompt1 == "4": # Exit
+    if prompt1 == "4": # Squishy Manager Info
+        clear(True)
+        print(NAME_MANAGER)
+        print("Version: '" + VERSION + "'")
+        print("Executible Directory: '" + COOP_DIR + "'")
+        print("   Executible Exists: " + str(os.path.isfile(COOP_DIR)))
+        print("Appdata Directory: '" + APPDATA_DIR + "'")
+        print("   Directory Exists: " + str(os.path.isdir(APPDATA_DIR)))
+        print("")
+        input("Press Enter to return to " + NAME_MAIN_MENU)
+    if prompt1 == "5": # Exit
         break
 clear(False)
 exit()
