@@ -13,6 +13,8 @@ NAME_SM64COOPDX = "SM64CoopDX"
 NAME_MANAGER = "Squishy " + NAME_SM64COOPDX + " Manager"
 NAME_MAIN_MENU = "Main Options"
 NAME_MODS_MENU = "Mod Options"
+NAME_MANAGER_OPTIONS = "Manager Options"
+NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
 VERSION = "1 (In-Dev)"
 DATE = datetime.now().strftime("%m/%d/%Y")
 
@@ -79,7 +81,7 @@ def unhide_tree(inputDir):
             os.chmod(os.path.join(root, file), stat.S_IRWXU)    
 
 def backup_mods(wipeModFolder):
-    if (not os.path.isdir(APPDATA_DIR)) or (not saveData["autoBackup"] and not wipeModFolder):
+    if (not os.path.isdir(APPDATA_DIR)):
         return
     clear(True)
     print("Ensuring files are moveable...")
@@ -91,7 +93,7 @@ def backup_mods(wipeModFolder):
         print("Backing up Default Mods Folder...")
         shutil.copytree(APPDATA_DIR + "\\mods", MANAGED_MODS_DIR + "\\backup", ignore=shutil.ignore_patterns('*.pyc', 'tmp*'))
         if wipeModFolder:
-            print("Clearing Default Mods Folder...")
+            print("Cleaning Default Mods Folder...")
             shutil.rmtree(APPDATA_DIR + "\\mods", ignore_errors=True, onerror=del_rw)
 
 backup_mods(False)
@@ -103,7 +105,11 @@ def load_mod_folders():
     print("Ensuring files are moveable...")
     unhide_tree(APPDATA_DIR + "\\mods")
     unhide_tree(MANAGED_MODS_DIR)
-    backup_mods(True)
+    print("Cleaning Default Mods Folder...")
+    if saveData["autoBackup"]:
+        backup_mods(True)
+    else:
+        shutil.rmtree(APPDATA_DIR + "\\mods", ignore_errors=True, onerror=del_rw)
     for s in saveData:
         for f in modFolders:
             if s == ("mods-" + f) and saveData[s] == True:
@@ -169,7 +175,7 @@ while(True):
             if prompt2 == "1": # Mod Folder Config
                 while(True):
                     clear(True)
-                    print("Mod Folders:")
+                    print(NAME_FOLDER_OPTIONS + ":")
                     #oldstr.replace("M", "")
                     modFolders = []
                     modNum = 0
@@ -184,7 +190,11 @@ while(True):
                         except:
                             saveData["mods-" + x] = save_field("mods-" + x, True)
                             modOnOff = True
-                        print(str(modNum) + ". " + x + " - " + ("Enabled" if modOnOff else "Disabled"))
+                        spacing = " "
+                        while len(spacing) < 25 - (len(x) + 2):
+                            spacing = spacing + "."
+                        spacing = spacing + " "
+                        print(str(modNum) + ". " + x + spacing + ("(O) Enabled" if modOnOff else "(X) Disabled"))
                     print()
                     print("Type a Folder's Name or it's Number to Toggle it")
                     print("Type 'all' to Enable all Folders")
@@ -221,7 +231,7 @@ while(True):
     if prompt1 == "3": # Manager Options
         while(True):
             clear(True)
-            print("Manager Options:")
+            print(NAME_MANAGER_OPTIONS + ":")
             print("1. Configure Directory")
             print("2. Toggle Auto-Backup (" + str(saveData["autoBackup"]) + ")")
             print("3. " + NAME_MANAGER + " Info")
