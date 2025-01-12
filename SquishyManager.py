@@ -1,12 +1,13 @@
 # Import OS Functions
-import os, glob
+import os
+import glob
+import time
 import stat
 import shutil
 import pickle
 from pathlib import Path
 from datetime import datetime
 from os import system, name
-from subprocess import call
 
 # Define Constants
 NAME_SM64COOPDX = "SM64CoopDX"
@@ -17,7 +18,7 @@ NAME_MANAGER_OPTIONS = "Manager Options"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
 VERSION = "1 (In-Dev)"
 DATE = datetime.now().strftime("%m/%d/%Y")
-
+# Define Constant Paths
 USER_DIR = str(Path.home())
 SAVE_DIR = "SquishyCoopManager.sav"
 APPDATA_DIR = (USER_DIR + "\\AppData\\Roaming\\sm64ex-coop") if os.path.isdir(USER_DIR + "\\AppData\\Roaming\\sm64ex-coop") else (USER_DIR + "\\AppData\\Roaming\\sm64coopdx")
@@ -35,6 +36,17 @@ def read_or_new_pickle(path, default):
     with open(path, "wb") as f:
         pickle.dump(default, f)
     return default
+
+from fnmatch import filter
+
+def include_patterns(*patterns):
+    def _ignore_patterns(path, names):
+        keep = set(name for pattern in patterns
+                            for name in filter(names, pattern))
+        ignore = set(name for name in names
+                        if name not in keep and not os.path.isdir(os.path.join(path, name)))
+        return ignore
+    return _ignore_patterns
 
 # Save Data
 saveData = {
@@ -55,7 +67,7 @@ def clear(header):
     # for windows
     if name == 'nt':
         _ = system('cls')
-    # for mac and linux(here, os.name is 'posix')
+    # for mac and linux
     else:
         _ = system('clear')
         
@@ -83,39 +95,59 @@ def unhide_tree(inputDir):
 def backup_mods(wipeModFolder):
     if (not os.path.isdir(APPDATA_DIR)):
         return
-    clear(True)
-    print("Ensuring files are moveable...")
+    print("Ensuring " + NAME_SM64COOPDX + "'s Mods are moveable...")
     unhide_tree(APPDATA_DIR + "\\mods")
-    unhide_tree(MANAGED_MODS_DIR)
+    # unhide_tree(MANAGED_MODS_DIR)
     if os.path.isdir(APPDATA_DIR + "\\mods"):
         print("Cleaning old Backups...")
         shutil.rmtree(MANAGED_MODS_DIR + "\\backup", ignore_errors=True)
-        print("Backing up Default Mods Folder...")
-        shutil.copytree(APPDATA_DIR + "\\mods", MANAGED_MODS_DIR + "\\backup", ignore=shutil.ignore_patterns('*.pyc', 'tmp*'))
+        print("Backing up " + NAME_SM64COOPDX + "'s Mods Folder...")
+        shutil.copytree(APPDATA_DIR + "\\mods", MANAGED_MODS_DIR + "\\backup")
         if wipeModFolder:
-            print("Cleaning Default Mods Folder...")
+            print("Cleaning " + NAME_SM64COOPDX + "'s Mods Folder...")
             shutil.rmtree(APPDATA_DIR + "\\mods", ignore_errors=True, onerror=del_rw)
 
+clear(True)
 backup_mods(False)
+
+def get_mod_folders():
+    modFolders = []
+    for (dirpath, dirnames, filenames) in os.walk(MANAGED_MODS_DIR):
+        modFolders.extend(dirnames)
+        return modFolders
 
 def load_mod_folders():
     if not os.path.isdir(APPDATA_DIR):
         return
-    clear(True)
-    print("Ensuring files are moveable...")
-    unhide_tree(APPDATA_DIR + "\\mods")
+    print("Loading mods...")
+    print("Ensuring " + NAME_MANAGER + "'s Mods are moveable...")
+    # unhide_tree(APPDATA_DIR + "\\mods")
     unhide_tree(MANAGED_MODS_DIR)
-    print("Cleaning Default Mods Folder...")
     if saveData["autoBackup"]:
         backup_mods(True)
     else:
+        print("Cleaning " + NAME_SM64COOPDX + "'s Mods Folder...")
         shutil.rmtree(APPDATA_DIR + "\\mods", ignore_errors=True, onerror=del_rw)
+    mods = get_mod_folders()
     for s in saveData:
-        for f in modFolders:
+        for f in mods:
             if s == ("mods-" + f) and saveData[s] == True:
-                print("Cloning " + f + " to Default Mods Folder")
-                shutil.copytree(MANAGED_MODS_DIR + "\\" + f, APPDATA_DIR + "\\mods", ignore=shutil.ignore_patterns('*.pyc', 'tmp*'), dirs_exist_ok=True)
+                print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
+                shutil.copytree(MANAGED_MODS_DIR + "\\" + f, APPDATA_DIR + "\\mods",
+                    ignore=include_patterns('*.lua', '*.luac',
+                                            '*.bin', '*.col', '*.c', '*.h',
+                                            '*.mp3', '*.ogg', '*.m64',
+                                            '*.lvl',
+                                            '*.png', '*.tex'), dirs_exist_ok=True)
                 break
+
+def boot_coop():
+    coopDirectory = saveData["coopDir"]
+    print("Standard Boot:")
+    load_mod_folders()
+    print("Booting " + NAME_SM64COOPDX + " from Directory: '" + coopDirectory + "'")
+    os.startfile(coopDirectory)
+
 
 def config_coop_dir():
     print("Please enter a new Directory to use for " + NAME_SM64COOPDX)
@@ -143,17 +175,15 @@ while(True):
         while(True):
             clear(True)
             if os.path.isfile(saveData["coopDir"]):
-                print("Opening from Directory: '" + saveData["coopDir"] + "'")
-                load_mod_folders()
-                os.startfile(saveData["coopDir"])
+                boot_coop()
                 break
             else:
                 print(NAME_SM64COOPDX + " not found at Directory '" + saveData["coopDir"] + "'")
                 config = config_coop_dir()
                 if config != None:
                     saveData["coopDir"] = save_field("coopDir", config)
-                    load_mod_folders()
-                    os.startfile(saveData["coopDir"])
+                    clear(True)
+                    boot_coop()
                     break
                 else:
                     break
@@ -177,12 +207,9 @@ while(True):
                     clear(True)
                     print(NAME_FOLDER_OPTIONS + ":")
                     #oldstr.replace("M", "")
-                    modFolders = []
+                    mods = get_mod_folders()
                     modNum = 0
-                    for (dirpath, dirnames, filenames) in os.walk(MANAGED_MODS_DIR):
-                        modFolders.extend(dirnames)
-                        break
-                    for x in modFolders:
+                    for x in mods:
                         modOnOff = False
                         modNum = modNum + 1
                         try:
@@ -202,16 +229,17 @@ while(True):
                     print("Type 'back' to return to " + NAME_MODS_MENU)
                     prompt3 = input()
                     if prompt3 == "all":
-                        for x in modFolders:
+                        for x in mods:
                             save_field("mods-" + x, True)
                     if prompt3 == "none":
-                        for x in modFolders:
+                        for x in mods:
                             save_field("mods-" + x, False)
-                    if prompt3 == "back":
+                    if prompt3 == "back" or prompt3 == "":
+                        clear(True)
                         load_mod_folders()
                         break
                     modNum = 0
-                    for x in modFolders:
+                    for x in mods:
                         modNum = modNum + 1
                         modNumString = str(modNum)
                         if prompt3 == modNumString or prompt3.lower() == x.lower():
@@ -255,11 +283,16 @@ while(True):
                 print(NAME_MANAGER)
                 print("Version " + VERSION)
                 print()
-                print("Executible Directory: '" + saveData["coopDir"] + "'")
-                print(" Executible Exists: " + str(os.path.isfile(saveData["coopDir"])))
-                print("Appdata Directory: '" + APPDATA_DIR + "'")
-                print(" Directory Exists: " + str(os.path.isdir(APPDATA_DIR)))
-                print("")
+                if os.path.isdir(saveData["coopDir"]):
+                    print("Executible Directory: '" + saveData["coopDir"] + "'")
+                else:
+                    print("Executible Directory Invalid")
+                if os.path.isdir(APPDATA_DIR):
+                    print("Appdata Directory: '" + APPDATA_DIR + "'")
+                else:
+                    print("Appdata Directory Invalid")
+                print("Auto-Backup Mods: " + saveData["autoBackup"])
+                print()
                 input("Press Enter to return to " + NAME_MAIN_MENU)
             if prompt2 == "4": # Exit
                 break
