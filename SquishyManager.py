@@ -175,7 +175,6 @@ def folder_from_file_dir(filename):
     return returnString
 
 def open_file(filename):
-    input()
     if sys.platform == "win32":
         os.startfile(filename)
     else:
