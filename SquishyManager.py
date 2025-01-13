@@ -123,7 +123,7 @@ def backup_mods(wipeModFolder):
         #print("Cleaning old Backups...")
         #shutil.rmtree(MANAGED_MODS_DIR + "/backup", ignore_errors=True)
         print("Backing up " + NAME_SM64COOPDX + "'s Mods Folder...")
-        shutil.copytree(APPDATA_DIR + "/mods", MANAGED_MODS_DIR + "/backup")
+        shutil.copytree(APPDATA_DIR + "/mods", MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True)
         if wipeModFolder:
             print("Cleaning " + NAME_SM64COOPDX + "'s Mods Folder...")
             shutil.rmtree(APPDATA_DIR + "/mods", ignore_errors=True, onerror=del_rw)
