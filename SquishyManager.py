@@ -113,20 +113,42 @@ def unhide_tree(inputDir):
         for file in files:
             os.chmod(os.path.join(root, file), stat.S_IRWXU)    
 
+def folder_from_file_dir(filename):
+    filename = filename.replace("\\", "/")
+    splitDir = filename.split("/")
+    dirCount = 0
+    returnString = ""
+    for x in splitDir:
+        dirCount = dirCount + 1
+        if dirCount < len(splitDir):
+            returnString = returnString + x + "/"
+    return returnString
+
 def backup_mods(wipeModFolder):
-    if (not os.path.isdir(APPDATA_DIR)):
-        return
-    print("Ensuring " + NAME_SM64COOPDX + "'s Mods are moveable...")
-    unhide_tree(APPDATA_DIR + "/mods")
     # unhide_tree(MANAGED_MODS_DIR)
-    if os.path.isdir(APPDATA_DIR + "/mods"):
+    dir = APPDATA_DIR + "/mods"
+    if os.path.isdir(dir):
+        print("Appdata Mods Folder Found!")
+        print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
+        unhide_tree(dir)
         #print("Cleaning old Backups...")
         #shutil.rmtree(MANAGED_MODS_DIR + "/backup", ignore_errors=True)
-        print("Backing up " + NAME_SM64COOPDX + "'s Mods Folder...")
-        shutil.copytree(APPDATA_DIR + "/mods", MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True)
+        print("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
+        shutil.copytree(dir, MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True)
         if wipeModFolder:
-            print("Cleaning " + NAME_SM64COOPDX + "'s Mods Folder...")
-            shutil.rmtree(APPDATA_DIR + "/mods", ignore_errors=True, onerror=del_rw)
+            print("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
+            shutil.rmtree(dir, ignore_errors=True, onerror=del_rw)
+    dir = folder_from_file_dir(saveData["coopDir"]) + "/mods"
+    if os.path.isdir(dir):
+        print("Install Directory Mods Folder Found!")
+        print("Ensuring " + NAME_SM64COOPDX + "'s Install Mods are moveable...")
+        unhide_tree(dir)
+        print("Cleaning " + NAME_MANAGER + "'s Default Folder...")
+        shutil.rmtree(MANAGED_MODS_DIR + "/default", ignore_errors=True)
+        print("Backing up " + NAME_SM64COOPDX + "'s Install Mods Folder...")
+        shutil.copytree(dir, MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True)
+        print("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
+        shutil.move(dir, MANAGED_MODS_DIR + "/default")
 
 clear(True)
 backup_mods(False)
@@ -162,17 +184,6 @@ def load_mod_folders():
                                             '*.lvl',
                                             '*.png', '*.tex'), dirs_exist_ok=True)
                 break
-
-def folder_from_file_dir(filename):
-    filename = filename.replace("\\", "/")
-    splitDir = filename.split("/")
-    dirCount = 0
-    returnString = ""
-    for x in splitDir:
-        dirCount = dirCount + 1
-        if dirCount < len(splitDir):
-            returnString = returnString + x + "/"
-    return returnString
 
 def open_file(filename):
     if sys.platform == "win32":
