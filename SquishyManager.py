@@ -120,8 +120,8 @@ def backup_mods(wipeModFolder):
     unhide_tree(APPDATA_DIR + "/mods")
     # unhide_tree(MANAGED_MODS_DIR)
     if os.path.isdir(APPDATA_DIR + "/mods"):
-        print("Cleaning old Backups...")
-        shutil.rmtree(MANAGED_MODS_DIR + "/backup", ignore_errors=True)
+        #print("Cleaning old Backups...")
+        #shutil.rmtree(MANAGED_MODS_DIR + "/backup", ignore_errors=True)
         print("Backing up " + NAME_SM64COOPDX + "'s Mods Folder...")
         shutil.copytree(APPDATA_DIR + "/mods", MANAGED_MODS_DIR + "/backup")
         if wipeModFolder:
