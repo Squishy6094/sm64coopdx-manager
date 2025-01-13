@@ -168,7 +168,7 @@ def open_file(filename):
         os.startfile(filename)
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.call(filename)
+        subprocess.call(filename, cwd=filename)
 
 def boot_coop():
     coopDirectory = saveData["coopDir"]
