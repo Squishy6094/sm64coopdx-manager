@@ -163,12 +163,31 @@ def load_mod_folders():
                                             '*.png', '*.tex'), dirs_exist_ok=True)
                 break
 
+def folder_from_file_dir(filename):
+    filename = filename.replace("\\", "/")
+    splitDir = filename.split("/")
+    dirCount = 0
+    returnString = ""
+    for x in splitDir:
+        dirCount = dirCount + 1
+        if dirCount < len(splitDir):
+            returnString = returnString + x + "/"
+    return returnString
+
 def open_file(filename):
+    input()
     if sys.platform == "win32":
         os.startfile(filename)
     else:
+        subprocess.call(filename, cwd=folder_from_file_dir(filename))
+
+        
+def open_folder(foldername):
+    if sys.platform == "win32":
+        os.startfile(foldername)
+    else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.call(filename, cwd=filename)
+        subprocess.call([opener, foldername],)
 
 def boot_coop():
     coopDirectory = saveData["coopDir"]
@@ -282,7 +301,7 @@ while(True):
                 backup_mods(True)
                 break
             if prompt2 == "3": # Open Appdata
-                open_file(APPDATA_DIR)
+                open_folder(APPDATA_DIR)
             if prompt2 == "4": # Back
                 break
     if prompt1 == "3": # Manager Options
