@@ -250,7 +250,7 @@ while(True):
             clear(True)
             if not os.path.isdir(APPDATA_DIR):
                 print("Appdata Directory does not exist, please open " + NAME_SM64COOPDX + " first!")
-                input("Press Enter to return to Main Options")
+                input("Press Enter to return to " + NAME_MAIN_MENU)
                 clear(False)
             else:
                 print(NAME_MODS_MENU + ":")
@@ -263,10 +263,15 @@ while(True):
             if prompt2 == "1": # Mod Folder Config
                 while(True):
                     clear(True)
-                    print(NAME_FOLDER_OPTIONS + ":")
                     #oldstr.replace("M", "")
                     mods = get_mod_folders()
                     modNum = 0
+                    if len(mods) < 1:
+                        print(NAME_MANAGER + "'s Managed Mods Folder is empty!")
+                        print("Your Managed Mods can be found at: '" + MANAGED_MODS_DIR + "'")
+                        input("Press Enter to return to " + NAME_MODS_MENU)
+                        break
+                    print(NAME_FOLDER_OPTIONS + ":")
                     for x in mods:
                         modOnOff = False
                         modNum = modNum + 1
