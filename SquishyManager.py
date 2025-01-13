@@ -163,12 +163,19 @@ def load_mod_folders():
                                             '*.png', '*.tex'), dirs_exist_ok=True)
                 break
 
+def open_file(filename):
+    if sys.platform == "win32":
+        os.startfile(filename)
+    else:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.call(filename)
+
 def boot_coop():
     coopDirectory = saveData["coopDir"]
     print("Standard Boot:")
     load_mod_folders()
     print("Booting " + NAME_SM64COOPDX + " from Directory: '" + coopDirectory + "'")
-    subprocess.call(coopDirectory)
+    open_file(coopDirectory)
 
 
 def config_coop_dir():
@@ -275,7 +282,7 @@ while(True):
                 backup_mods(True)
                 break
             if prompt2 == "3": # Open Appdata
-                os.startfile(APPDATA_DIR)
+                open_file(APPDATA_DIR)
             if prompt2 == "4": # Back
                 break
     if prompt1 == "3": # Manager Options
