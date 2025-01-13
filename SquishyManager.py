@@ -8,6 +8,7 @@ import pickle
 from pathlib import Path
 from datetime import datetime
 from os import system, name
+import platform
 
 # Define Constants
 NAME_SM64COOPDX = "SM64CoopDX"
@@ -18,11 +19,30 @@ NAME_MANAGER_OPTIONS = "Manager Options"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
 VERSION = "1 (In-Dev)"
 DATE = datetime.now().strftime("%m/%d/%Y")
+PLATFORM_WINDOWS = "Windows"
+PLATFORM_LINUX = "Linux"
+
 # Define Constant Paths
 USER_DIR = str(Path.home())
-SAVE_DIR = "SquishyCoopManager.sav"
-APPDATA_DIR = (USER_DIR + "\\AppData\\Roaming\\sm64ex-coop") if os.path.isdir(USER_DIR + "\\AppData\\Roaming\\sm64ex-coop") else (USER_DIR + "\\AppData\\Roaming\\sm64coopdx")
-MANAGED_MODS_DIR = APPDATA_DIR + "\\managed-mods"
+SAVE_DIR = "SquishyCoopManager.pickle"
+def get_appdata_dir():
+    systemName = platform.system()
+    generalAppdata = ""
+
+    # Get Platform's Appdata Folder
+    if systemName == PLATFORM_LINUX:
+        generalAppdata = USER_DIR + "/.local/share/"
+    else:
+        generalAppdata = USER_DIR + "/AppData/Roaming/"
+
+    # Get Appdata folder for Coop
+    if os.path.isdir(generalAppdata + "sm64ex-coop"):
+        return generalAppdata + "sm64ex-coop"
+    else:
+        return generalAppdata + "sm64coopdx"
+
+APPDATA_DIR = get_appdata_dir()
+MANAGED_MODS_DIR = APPDATA_DIR + "/managed-mods"
 if not os.path.isdir(MANAGED_MODS_DIR):
    os.makedirs(MANAGED_MODS_DIR)
 
@@ -50,7 +70,7 @@ def include_patterns(*patterns):
 
 # Save Data
 saveData = {
-    "coopDir": (USER_DIR + '\\Downloads\\sm64coopdx\\sm64coopdx.exe'),
+    "coopDir": (USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
     "autoBackup": True,
 }
 saveDataPickle = read_or_new_pickle(SAVE_DIR, saveData)
@@ -65,11 +85,11 @@ def save_field(field, value):
    
 def clear(header):
     # for windows
-    if name == 'nt':
-        _ = system('cls')
+    if os.name == 'nt':
+        _ = os.system('cls')
     # for mac and linux
     else:
-        _ = system('clear')
+        _ = os.system('clear')
         
     if header: # Header
         header = NAME_MANAGER + " v" + VERSION + " - " + DATE
@@ -96,16 +116,16 @@ def backup_mods(wipeModFolder):
     if (not os.path.isdir(APPDATA_DIR)):
         return
     print("Ensuring " + NAME_SM64COOPDX + "'s Mods are moveable...")
-    unhide_tree(APPDATA_DIR + "\\mods")
+    unhide_tree(APPDATA_DIR + "/mods")
     # unhide_tree(MANAGED_MODS_DIR)
-    if os.path.isdir(APPDATA_DIR + "\\mods"):
+    if os.path.isdir(APPDATA_DIR + "/mods"):
         print("Cleaning old Backups...")
-        shutil.rmtree(MANAGED_MODS_DIR + "\\backup", ignore_errors=True)
+        shutil.rmtree(MANAGED_MODS_DIR + "/backup", ignore_errors=True)
         print("Backing up " + NAME_SM64COOPDX + "'s Mods Folder...")
-        shutil.copytree(APPDATA_DIR + "\\mods", MANAGED_MODS_DIR + "\\backup")
+        shutil.copytree(APPDATA_DIR + "/mods", MANAGED_MODS_DIR + "/backup")
         if wipeModFolder:
             print("Cleaning " + NAME_SM64COOPDX + "'s Mods Folder...")
-            shutil.rmtree(APPDATA_DIR + "\\mods", ignore_errors=True, onerror=del_rw)
+            shutil.rmtree(APPDATA_DIR + "/mods", ignore_errors=True, onerror=del_rw)
 
 clear(True)
 backup_mods(False)
@@ -121,22 +141,23 @@ def load_mod_folders():
         return
     print("Loading mods...")
     print("Ensuring " + NAME_MANAGER + "'s Mods are moveable...")
-    # unhide_tree(APPDATA_DIR + "\\mods")
+    # unhide_tree(APPDATA_DIR + "/mods")
     unhide_tree(MANAGED_MODS_DIR)
     if saveData["autoBackup"]:
         backup_mods(True)
     else:
         print("Cleaning " + NAME_SM64COOPDX + "'s Mods Folder...")
-        shutil.rmtree(APPDATA_DIR + "\\mods", ignore_errors=True, onerror=del_rw)
+        shutil.rmtree(APPDATA_DIR + "/mods", ignore_errors=True, onerror=del_rw)
     mods = get_mod_folders()
     for s in saveData:
         for f in mods:
             if s == ("mods-" + f) and saveData[s] == True:
                 print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
-                shutil.copytree(MANAGED_MODS_DIR + "\\" + f, APPDATA_DIR + "\\mods",
+                shutil.copytree(MANAGED_MODS_DIR + "/" + f, APPDATA_DIR + "/mods",
                     ignore=include_patterns('*.lua', '*.luac',
                                             '*.bin', '*.col', '*.c', '*.h',
-                                            '*.mp3', '*.ogg', '*.m64',
+                                            '*.bhv'
+                                            '*.mp3', '*.ogg', '*.m64', '*.aiff'
                                             '*.lvl',
                                             '*.png', '*.tex'), dirs_exist_ok=True)
                 break
@@ -272,7 +293,6 @@ while(True):
                     config = config_coop_dir()
                     if config != None:
                         saveData["coopDir"] = save_field("coopDir", config)
-                        os.startfile(saveData["coopDir"])
                         break
                     else:
                         break
@@ -283,15 +303,18 @@ while(True):
                 print(NAME_MANAGER)
                 print("Version " + VERSION)
                 print()
-                if os.path.isdir(saveData["coopDir"]):
+                # Executible Exists
+                if os.path.isfile(saveData["coopDir"]):
                     print("Executible Directory: '" + saveData["coopDir"] + "'")
                 else:
                     print("Executible Directory Invalid")
+                # Appdata Exists
                 if os.path.isdir(APPDATA_DIR):
                     print("Appdata Directory: '" + APPDATA_DIR + "'")
                 else:
                     print("Appdata Directory Invalid")
-                print("Auto-Backup Mods: " + saveData["autoBackup"])
+                # Other Save Data
+                print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
                 print()
                 input("Press Enter to return to " + NAME_MAIN_MENU)
             if prompt2 == "4": # Exit
