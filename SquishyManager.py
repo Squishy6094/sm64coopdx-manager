@@ -7,6 +7,7 @@ import time
 import stat
 import shutil
 import pickle
+import webbrowser
 from pathlib import Path
 from datetime import datetime
 import platform
@@ -31,10 +32,13 @@ def get_appdata_dir():
     generalAppdata = ""
 
     # Get Platform's Appdata Folder
-    if systemName == PLATFORM_LINUX:
+    if systemName == PLATFORM_WINDOWS:
+        generalAppdata = USER_DIR + "/AppData/Roaming/"
+    elif systemName == PLATFORM_LINUX:
         generalAppdata = USER_DIR + "/.local/share/"
     else:
-        generalAppdata = USER_DIR + "/AppData/Roaming/"
+        print(NAME_MANAGER + " is not supported on your Operating System")
+        exit()
 
     # Get Appdata folder for Coop
     if os.path.isdir(generalAppdata + "sm64ex-coop"):
@@ -226,7 +230,8 @@ while(True):
     print("1. Open " + NAME_SM64COOPDX)
     print("2. Mod Options")
     print("3. Manager Options")
-    print("4. Close Program")
+    print("4. Support Links")
+    print("5. Close Program")
 
     prompt1 = input()
     if prompt1 == "1": # Open Coop
@@ -256,7 +261,7 @@ while(True):
                 print(NAME_MODS_MENU + ":")
                 print("1. Configure Loaded Mod Folders")
                 print("2. Backup and Clear Mods Folder")
-                print("3. Open Appdata")
+                print("3. Open Managed Mods Folder")
                 print("4. Back")
 
             prompt2 = input()
@@ -316,7 +321,7 @@ while(True):
                 backup_mods(True)
                 break
             if prompt2 == "3": # Open Appdata
-                open_folder(APPDATA_DIR)
+                open_folder(MANAGED_MODS_DIR)
             if prompt2 == "4": # Back
                 break
     if prompt1 == "3": # Manager Options
@@ -361,7 +366,25 @@ while(True):
                 input("Press Enter to return to " + NAME_MAIN_MENU)
             if prompt2 == "4": # Exit
                 break
-    if prompt1 == "4": # Exit
+    if prompt1 == "4": # Support Links
+        while(True):
+            clear(True)
+            print("Support Links:")
+            print("1. Squishy Community - Manager Support - (Discord)")
+            print("2. " + NAME_MANAGER + " - Issue Reporting - (Github)")
+            print("3. Coop Central - " + NAME_SM64COOPDX + " Support - (Discord)")
+            print("4. Back")
+
+            prompt2 = input()
+            if prompt2 == "1":
+                webbrowser.open("https://discord.gg/HtpXAxrgAw", new=0, autoraise=True)
+            if prompt2 == "2":
+                webbrowser.open("https://github.com/Squishy6094/SquishyCoopManager", new=0, autoraise=True)
+            if prompt2 == "3":
+                webbrowser.open("https://discord.gg/G2zMwjbxdh", new=0, autoraise=True)
+            if prompt2 == "4" or prompt2 == "":
+                break
+    if prompt1 == "5": # Exit
         break
 clear(False)
 exit()
