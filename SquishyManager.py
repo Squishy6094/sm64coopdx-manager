@@ -24,7 +24,7 @@ PLATFORM_WINDOWS = "Windows"
 PLATFORM_LINUX = "Linux"
 
 # Define Constant Paths
-USER_DIR = str(Path.home())
+USER_DIR = str(Path.home()).replace("\\", "/")
 SAVE_DIR = "SquishyCoopManager.pickle"
 def get_appdata_dir():
     systemName = platform.system()
