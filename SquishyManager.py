@@ -221,8 +221,8 @@ def load_mod_folders():
                 shutil.copytree(MANAGED_MODS_DIR + "/" + f, APPDATA_DIR + "/mods",
                     ignore=include_patterns('*.lua', '*.luac',
                                             '*.bin', '*.col', '*.c', '*.h',
-                                            '*.bhv'
-                                            '*.mp3', '*.ogg', '*.m64', '*.aiff'
+                                            '*.bhv',
+                                            '*.mp3', '*.ogg', '*.m64', '*.aiff',
                                             '*.lvl',
                                             '*.png', '*.tex'), dirs_exist_ok=True)
                 break
