@@ -107,7 +107,6 @@ def clear(header):
 def read_or_new_pickle(path, default):
     if os.path.isfile(path):
         with open(path, "rb") as f:
-            print(f)
             try:
                 return pickle.load(f)
             except Exception:
