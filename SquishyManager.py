@@ -69,10 +69,13 @@ if not os.path.isdir(MANAGED_MODS_DIR):
 
 # Install External Libs
 import importlib.util
+installedModuleList = []
 def check_module(package):
-    if importlib.util.find_spec('requests') == None:
+    packageSpec = importlib.util.find_spec(package)
+    if packageSpec == None:
         print("Installing Dependancy '" + package + "'")
         subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+    installedModuleList.append(package)
 
 check_module('requests')
 import requests
@@ -397,6 +400,10 @@ while(True):
                     print("Appdata Directory Invalid")
                 # Other Save Data
                 print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
+                print()
+                print("Required Python Libraries Installed:")
+                for x in installedModuleList:
+                    print("- " + x)
                 print()
                 input("Press Enter to return to " + NAME_MAIN_MENU)
             if prompt2 == "4": # Exit
