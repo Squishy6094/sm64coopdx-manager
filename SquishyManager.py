@@ -12,6 +12,17 @@ from pathlib import Path
 from datetime import datetime
 import platform
 
+# Ensure Errors are readable and Reportable
+def show_exception_and_exit(exc_type, exc_value, tb):
+    import traceback
+    traceback.print_exception(exc_type, exc_value, tb)
+    print()
+    print("Please report this error to the Github!")
+    input("Press Enter to Close Program")
+    sys.exit(-1)
+
+sys.excepthook = show_exception_and_exit
+
 # Define Constants
 NAME_SM64COOPDX = "SM64CoopDX"
 NAME_MANAGER = "Squishy " + NAME_SM64COOPDX + " Manager"
@@ -38,6 +49,7 @@ def get_appdata_dir():
         generalAppdata = USER_DIR + "/.local/share/"
     else:
         print(NAME_MANAGER + " is not supported on your Operating System")
+        input("Press Enter to Close Program")
         exit()
 
     # Get Appdata folder for Coop
