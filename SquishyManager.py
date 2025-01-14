@@ -12,9 +12,18 @@ from datetime import datetime
 import platform
 import fnmatch
 
+# Clear Console
+def clear():
+    # for windows
+    if os.name == 'nt':
+        _ = os.system('cls')
+    # for mac and linux
+    else:
+        _ = os.system('clear')
 
 # Ensure Errors are readable and Reportable
 def show_exception_and_exit(exc_type, exc_value, tb):
+    clear()
     import traceback
     traceback.print_exception(exc_type, exc_value, tb)
     print()
@@ -22,7 +31,6 @@ def show_exception_and_exit(exc_type, exc_value, tb):
     input("Press Enter to Close Program")
     sys.exit(-1)
 sys.excepthook = show_exception_and_exit
-
 
 # Define Constants
 NAME_SM64COOPDX = "SM64CoopDX"
@@ -36,6 +44,7 @@ DATE = datetime.now().strftime("%m/%d/%Y")
 PLATFORM_WINDOWS = "Windows"
 PLATFORM_LINUX = "Linux"
 
+clear()
 print("Booting " + NAME_MANAGER + "...")
 
 # Define Constant Paths
@@ -52,6 +61,7 @@ def get_appdata_dir():
     elif systemName == PLATFORM_LINUX:
         generalAppdata = USER_DIR + "/.local/share/"
     else:
+        clear()
         print(NAME_MANAGER + " is not supported on your Operating System")
         input("Press Enter to Close Program")
         exit()
@@ -70,23 +80,26 @@ if not os.path.isdir(MANAGED_MODS_DIR):
 # Install External Libs
 import importlib.util
 installedModuleList = []
+queueRestart = False
 def check_module(package):
     packageSpec = importlib.util.find_spec(package)
     if packageSpec == None:
         print("Installing Dependancy '" + package + "'")
         subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-    installedModuleList.append(package)
+        queueRestart = True
+    else:
+        installedModuleList.append(package)
 
 check_module('requests')
+
+if queueRestart:
+    clear()
+    print(NAME_MANAGER + " requires a Restart in order to use Installed Python Libraries")
+
 import requests
 
-def clear(header):
-    # for windows
-    if os.name == 'nt':
-        _ = os.system('cls')
-    # for mac and linux
-    else:
-        _ = os.system('clear')
+def clear_with_header():
+    clear()
 
     updateString = ""
     response = requests.get("https://api.github.com/repos/Squishy6094/SquishyCoopManager/releases/latest")
@@ -95,17 +108,16 @@ def clear(header):
     except:
         updateString = None
         
-    if header: # Header
-        header = NAME_MANAGER + " v" + VERSION + " - " + DATE
-        headerBreak = ""
-        while len(headerBreak) < len(header):
-            headerBreak = headerBreak + "-"
-        print(headerBreak)
-        print(header)
-        if updateString != None and updateString != "v" + VERSION:
-            print("Update Avalible! v" + VERSION + " -> " + updateString)
-        print(headerBreak)
-        print()
+    header = NAME_MANAGER + " v" + VERSION + " - " + DATE
+    headerBreak = ""
+    while len(headerBreak) < len(header):
+        headerBreak = headerBreak + "-"
+    print(headerBreak)
+    print(header)
+    if updateString != None and updateString != "v" + VERSION:
+        print("Update Avalible! v" + VERSION + " -> " + updateString)
+    print(headerBreak)
+    print()
 
 def read_or_new_pickle(path, default):
     if os.path.isfile(path):
@@ -183,7 +195,7 @@ def backup_mods(wipeModFolder):
         print("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
         shutil.move(dir, MANAGED_MODS_DIR + "/default")
 
-clear(True)
+clear_with_header()
 backup_mods(False)
 
 def include_patterns(*patterns):
@@ -263,7 +275,7 @@ def config_coop_dir():
 
 # Main Options
 while(True):
-    clear(True)
+    clear_with_header()
     print(NAME_MAIN_MENU + ":")
     print("1. Open " + NAME_SM64COOPDX)
     print("2. Mod Options")
@@ -274,7 +286,7 @@ while(True):
     prompt1 = input("> ")
     if prompt1 == "1": # Open Coop
         while(True):
-            clear(True)
+            clear_with_header()
             if os.path.isfile(saveData["coopDir"]):
                 boot_coop()
                 break
@@ -283,18 +295,18 @@ while(True):
                 config = config_coop_dir()
                 if config != None:
                     saveData["coopDir"] = save_field("coopDir", config)
-                    clear(True)
+                    clear_with_header()
                     boot_coop()
                     break
                 else:
                     break
     if prompt1 == "2": # Mod Options
         while(True):
-            clear(True)
+            clear_with_header()
             if not os.path.isdir(APPDATA_DIR):
                 print("Appdata Directory does not exist, please open " + NAME_SM64COOPDX + " first!")
                 input("Press Enter to return to " + NAME_MAIN_MENU)
-                clear(False)
+                clear()
             else:
                 print(NAME_MODS_MENU + ":")
                 print("1. Configure Loaded Mod Folders")
@@ -305,7 +317,7 @@ while(True):
             prompt2 = input("> ")
             if prompt2 == "1": # Mod Folder Config
                 while(True):
-                    clear(True)
+                    clear_with_header()
                     #oldstr.replace("M", "")
                     mods = get_mod_folders()
                     modNum = 0
@@ -341,7 +353,7 @@ while(True):
                         for x in mods:
                             save_field("mods-" + x, False)
                     if prompt3 == "back" or prompt3 == "":
-                        clear(True)
+                        clear_with_header()
                         load_mod_folders()
                         break
                     modNum = 0
@@ -364,7 +376,7 @@ while(True):
                 break
     if prompt1 == "3": # Manager Options
         while(True):
-            clear(True)
+            clear_with_header()
             print(NAME_MANAGER_OPTIONS + ":")
             print("1. Configure Directory")
             print("2. Toggle Auto-Backup (" + str(saveData["autoBackup"]) + ")")
@@ -373,7 +385,7 @@ while(True):
 
             prompt2 = input("> ")
             if prompt2 == "1": # Set Coop Directory
-                clear(True)
+                clear_with_header()
                 while(True):
                     config = config_coop_dir()
                     if config != None:
@@ -384,7 +396,7 @@ while(True):
             if prompt2 == "2": # Set Coop Directory
                 saveData["autoBackup"] = save_field("autoBackup", not saveData["autoBackup"])
             if prompt2 == "3": # Squishy Manager Info
-                clear(True)
+                clear_with_header()
                 print(NAME_MANAGER)
                 print("Version " + VERSION)
                 print()
@@ -410,7 +422,7 @@ while(True):
                 break
     if prompt1 == "4": # Support Links
         while(True):
-            clear(True)
+            clear_with_header()
             print("Support Links:")
             print("1. Squishy Community - Manager Support - (Discord)")
             print("2. " + NAME_MANAGER + " - Issue Reporting - (Github)")
@@ -428,5 +440,5 @@ while(True):
                 break
     if prompt1 == "5": # Exit
         break
-clear(False)
+clear()
 exit()
