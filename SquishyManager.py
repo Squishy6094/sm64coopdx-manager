@@ -1,16 +1,17 @@
-# Import OS Functions
+# Import Python's Default Libs
 import os
 import sys
 import subprocess
-import glob
-import time
 import stat
 import shutil
 import pickle
 import webbrowser
+#import psutil
 from pathlib import Path
 from datetime import datetime
 import platform
+import fnmatch
+
 
 # Ensure Errors are readable and Reportable
 def show_exception_and_exit(exc_type, exc_value, tb):
@@ -20,8 +21,8 @@ def show_exception_and_exit(exc_type, exc_value, tb):
     print("Please report this error to the Github!")
     input("Press Enter to Close Program")
     sys.exit(-1)
-
 sys.excepthook = show_exception_and_exit
+
 
 # Define Constants
 NAME_SM64COOPDX = "SM64CoopDX"
@@ -30,13 +31,16 @@ NAME_MAIN_MENU = "Main Options"
 NAME_MODS_MENU = "Mod Options"
 NAME_MANAGER_OPTIONS = "Manager Options"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
-VERSION = "1 (In-Dev)"
+VERSION = "1"
 DATE = datetime.now().strftime("%m/%d/%Y")
 PLATFORM_WINDOWS = "Windows"
 PLATFORM_LINUX = "Linux"
 
+print("Booting " + NAME_MANAGER + "...")
+
 # Define Constant Paths
 USER_DIR = str(Path.home()).replace("\\", "/")
+os.chdir(USER_DIR)
 SAVE_DIR = "SquishyCoopManager.pickle"
 def get_appdata_dir():
     systemName = platform.system()
@@ -63,32 +67,61 @@ MANAGED_MODS_DIR = APPDATA_DIR + "/managed-mods"
 if not os.path.isdir(MANAGED_MODS_DIR):
    os.makedirs(MANAGED_MODS_DIR)
 
+# Install External Libs
+import importlib.util
+def check_module(package):
+    if importlib.util.find_spec('requests') == None:
+        print("Installing Dependancy '" + package + "'")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+check_module('requests')
+import requests
+
+def clear(header):
+    # for windows
+    if os.name == 'nt':
+        _ = os.system('cls')
+    # for mac and linux
+    else:
+        _ = os.system('clear')
+
+    updateString = ""
+    response = requests.get("https://api.github.com/repos/Squishy6094/SquishyCoopManager/releases/latest")
+    try:
+        updateString = response.json()["tag_name"]
+    except:
+        updateString = None
+        
+    if header: # Header
+        header = NAME_MANAGER + " v" + VERSION + " - " + DATE
+        headerBreak = ""
+        while len(headerBreak) < len(header):
+            headerBreak = headerBreak + "-"
+        print(headerBreak)
+        print(header)
+        if updateString != None and updateString != "v" + VERSION:
+            print("Update Avalible! v" + VERSION + " -> " + updateString)
+        print(headerBreak)
+        print()
+
 def read_or_new_pickle(path, default):
     if os.path.isfile(path):
         with open(path, "rb") as f:
+            print(f)
             try:
                 return pickle.load(f)
             except Exception:
-                pass 
-    with open(path, "wb") as f:
-        pickle.dump(default, f)
+                pass
+    else:
+        with open(path, 'wb') as f:
+            pickle.dump(default, f)
     return default
-
-from fnmatch import filter
-
-def include_patterns(*patterns):
-    def _ignore_patterns(path, names):
-        keep = set(name for pattern in patterns
-                            for name in filter(names, pattern))
-        ignore = set(name for name in names
-                        if name not in keep and not os.path.isdir(os.path.join(path, name)))
-        return ignore
-    return _ignore_patterns
 
 # Save Data
 saveData = {
     "coopDir": (USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
     "autoBackup": True,
+    "mods-backup": False,
 }
 saveDataPickle = read_or_new_pickle(SAVE_DIR, saveData)
 for s in saveDataPickle:
@@ -99,24 +132,6 @@ def save_field(field, value):
     with open(SAVE_DIR, "wb") as f:
         pickle.dump(saveData, f)
     return value
-   
-def clear(header):
-    # for windows
-    if os.name == 'nt':
-        _ = os.system('cls')
-    # for mac and linux
-    else:
-        _ = os.system('clear')
-        
-    if header: # Header
-        header = NAME_MANAGER + " v" + VERSION + " - " + DATE
-        headerBreak = ""
-        while len(headerBreak) < len(header):
-            headerBreak = headerBreak + "-"
-        print(headerBreak)
-        print(header)
-        print(headerBreak)
-        print()
 
 def del_rw(action, name, exc):
     os.chmod(name, stat.S_IWRITE)
@@ -168,6 +183,15 @@ def backup_mods(wipeModFolder):
 
 clear(True)
 backup_mods(False)
+
+def include_patterns(*patterns):
+    def _ignore_patterns(path, names):
+        keep = set(name for pattern in patterns
+                            for name in fnmatch.filter(names, pattern))
+        ignore = set(name for name in names
+                        if name not in keep and not os.path.isdir(os.path.join(path, name)))
+        return ignore
+    return _ignore_patterns
 
 def get_mod_folders():
     modFolders = []
