@@ -253,7 +253,7 @@ def config_coop_dir():
     print("Please enter a new Directory to use for " + NAME_SM64COOPDX)
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
-        inputDir = input()
+        inputDir = input("> ")
         if os.path.isfile(inputDir):
             return inputDir
         elif inputDir == "back":
@@ -271,7 +271,7 @@ while(True):
     print("4. Support Links")
     print("5. Close Program")
 
-    prompt1 = input()
+    prompt1 = input("> ")
     if prompt1 == "1": # Open Coop
         while(True):
             clear(True)
@@ -302,7 +302,7 @@ while(True):
                 print("3. Open Managed Mods Folder")
                 print("4. Back")
 
-            prompt2 = input()
+            prompt2 = input("> ")
             if prompt2 == "1": # Mod Folder Config
                 while(True):
                     clear(True)
@@ -333,7 +333,7 @@ while(True):
                     print("Type 'all' to Enable all Folders")
                     print("Type 'none' to Disable all Folders")
                     print("Type 'back' to return to " + NAME_MODS_MENU)
-                    prompt3 = input()
+                    prompt3 = input("> ")
                     if prompt3 == "all":
                         for x in mods:
                             save_field("mods-" + x, True)
@@ -371,7 +371,7 @@ while(True):
             print("3. " + NAME_MANAGER + " Info")
             print("4. Back")
 
-            prompt2 = input()
+            prompt2 = input("> ")
             if prompt2 == "1": # Set Coop Directory
                 clear(True)
                 while(True):
@@ -417,7 +417,7 @@ while(True):
             print("3. Coop Central - " + NAME_SM64COOPDX + " Support - (Discord)")
             print("4. Back")
 
-            prompt2 = input()
+            prompt2 = input("> ")
             if prompt2 == "1":
                 webbrowser.open("https://discord.gg/HtpXAxrgAw", new=0, autoraise=True)
             if prompt2 == "2":
