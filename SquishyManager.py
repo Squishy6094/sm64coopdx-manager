@@ -181,9 +181,17 @@ def folder_from_file_dir(filename):
             returnString = returnString + x + "/"
     return returnString
 
-def backup_mods(wipeModFolder):
-    # unhide_tree(MANAGED_MODS_DIR)
+def backup_mods(wipeModFolder=False, forceBackup=False):
     dir = APPDATA_DIR + "/mods"
+    if not saveData["autoBackup"]:
+        if not forceBackup:
+            print("Skipping Auto-Backup...")
+            if wipeModFolder:
+                print("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
+                shutil.rmtree(dir, ignore_errors=True, onerror=del_rw)
+            return
+        else:
+            print("Forcing Auto-Backup...")
     if os.path.isdir(dir):
         print("Appdata Mods Folder Found!")
         print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
@@ -232,11 +240,7 @@ def load_mod_folders():
     print("Ensuring " + NAME_MANAGER + "'s Mods are moveable...")
     # unhide_tree(APPDATA_DIR + "/mods")
     unhide_tree(MANAGED_MODS_DIR)
-    if saveData["autoBackup"]:
-        backup_mods(True)
-    else:
-        print("Cleaning " + NAME_SM64COOPDX + "'s Mods Folder...")
-        shutil.rmtree(APPDATA_DIR + "/mods", ignore_errors=True, onerror=del_rw)
+    backup_mods(True)
     mods = get_mod_folders()
     for s in saveData:
         for f in mods:
@@ -355,9 +359,10 @@ while(True):
                         spacing = spacing + " "
                         print(str(modNum) + ". " + x + spacing + ("(O) Enabled" if modOnOff else "(X) Disabled"))
                     print()
-                    print("Type a Folder's Name or it's Number to Toggle it")
+                    print("Type a Folder's Name / Number to Toggle it")
                     print("Type 'all' to Enable all Folders")
                     print("Type 'none' to Disable all Folders")
+                    print("Type 'apply' to Apply Current Folders without leaving")
                     print("Type 'back' to return to " + NAME_MODS_MENU)
                     prompt3 = input("> ")
                     if prompt3 == "all":
@@ -366,7 +371,10 @@ while(True):
                     if prompt3 == "none":
                         for x in mods:
                             save_field("mods-" + x, False)
-                    if prompt3 == "back" or prompt3 == "":
+                    if prompt3 == "apply" or prompt3 == "":
+                        clear_with_header()
+                        load_mod_folders()
+                    if prompt3 == "back":
                         clear_with_header()
                         load_mod_folders()
                         break
@@ -382,7 +390,7 @@ while(True):
                                 modOnOff = True
                             save_field("mods-" + x, (not modOnOff))
             if prompt2 == "2": # Backup and Clear Mods
-                backup_mods(True)
+                backup_mods(True, True)
                 break
             if prompt2 == "3": # Open Appdata
                 open_folder(MANAGED_MODS_DIR)
