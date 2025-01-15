@@ -378,14 +378,14 @@ while(True):
                         print("(" + MANAGED_MODS_DIR + ")")
                     print()
                     print("Type a Folder's Name / Number to Toggle it")
-                    print("Type 'all' to Enable all Folders")
-                    print("Type 'none' to Disable all Folders")
+                    print("Type 'all' or 'none' to Enable or Disable all Folders")
                     print("Type 'apply' to Apply Current Folders without leaving")
                     print("Type 'back' to return to " + NAME_MODS_MENU)
                     prompt3 = input("> ")
                     if prompt3 == "all":
                         for x in mods:
                             save_field("mods-" + x, True)
+                        save_field("mods-backup", False)
                     if prompt3 == "none":
                         for x in mods:
                             save_field("mods-" + x, False)
