@@ -86,16 +86,18 @@ def check_module(package):
     if packageSpec == None:
         print("Installing Dependancy '" + package + "'")
         subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        queueRestart = True
+        return True
     else:
         installedModuleList.append(package)
+        return queueRestart
 
-check_module('requests')
+queueRestart = check_module('requests')
 
 if queueRestart:
     clear()
     print(NAME_MANAGER + " requires a Restart in order to use Installed Python Libraries")
-
+    input("Press Enter to Restart Program")
+    os.execv(sys.executable, ['python'] + sys.argv)
 import requests
 
 def clear_with_header():
