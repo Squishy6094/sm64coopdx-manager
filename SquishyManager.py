@@ -6,7 +6,7 @@ import stat
 import shutil
 import pickle
 import webbrowser
-#import psutil
+import time
 from pathlib import Path
 from datetime import datetime
 import platform
@@ -92,13 +92,16 @@ def check_module(package):
         return queueRestart
 
 queueRestart = check_module('requests')
+queueRestart = check_module('chime')
 
 if queueRestart:
     clear()
     print(NAME_MANAGER + " requires a Restart in order to use Installed Python Libraries")
     input("Press Enter to Restart Program")
     os.execv(sys.executable, ['python'] + sys.argv)
+    
 import requests
+import chime
 
 def clear_with_header():
     clear()
@@ -121,6 +124,7 @@ def clear_with_header():
     print(headerBreak)
     print()
 
+
 def read_or_new_pickle(path, default):
     if os.path.isfile(path):
         with open(path, "rb") as f:
@@ -137,6 +141,7 @@ def read_or_new_pickle(path, default):
 saveData = {
     "coopDir": (USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
     "autoBackup": True,
+    "loadChime": True,
     "mods-backup": False,
 }
 saveDataPickle = read_or_new_pickle(SAVE_DIR, saveData)
@@ -148,6 +153,11 @@ def save_field(field, value):
     with open(SAVE_DIR, "wb") as f:
         pickle.dump(saveData, f)
     return value
+
+def notify():
+    if saveData["loadChime"]:
+        chime.theme('mario')
+        chime.success(sync=True)
 
 def del_rw(action, name, exc):
     os.chmod(name, stat.S_IWRITE)
@@ -240,6 +250,7 @@ def load_mod_folders():
                                             '*.lvl',
                                             '*.png', '*.tex'), dirs_exist_ok=True)
                 break
+    notify()
 
 def open_file(filename):
     if sys.platform == "win32":
@@ -276,6 +287,7 @@ def config_coop_dir():
             print("Directory not found, please enter a valid directory")
 
 # Main Options
+notify()
 while(True):
     clear_with_header()
     print(NAME_MAIN_MENU + ":")
@@ -382,8 +394,9 @@ while(True):
             print(NAME_MANAGER_OPTIONS + ":")
             print("1. Configure Directory")
             print("2. Toggle Auto-Backup (" + str(saveData["autoBackup"]) + ")")
-            print("3. " + NAME_MANAGER + " Info")
-            print("4. Back")
+            print("3. Toggle Load Chime (" + str(saveData["loadChime"]) + ")")
+            print("4. " + NAME_MANAGER + " Info")
+            print("5. Back")
 
             prompt2 = input("> ")
             if prompt2 == "1": # Set Coop Directory
@@ -397,7 +410,9 @@ while(True):
                         break
             if prompt2 == "2": # Set Coop Directory
                 saveData["autoBackup"] = save_field("autoBackup", not saveData["autoBackup"])
-            if prompt2 == "3": # Squishy Manager Info
+            if prompt2 == "3": # Set Coop Directory
+                saveData["loadChime"] = save_field("loadChime", not saveData["loadChime"])
+            if prompt2 == "4": # Squishy Manager Info
                 clear_with_header()
                 print(NAME_MANAGER)
                 print("Version " + VERSION)
@@ -414,13 +429,14 @@ while(True):
                     print("Appdata Directory Invalid")
                 # Other Save Data
                 print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
+                print("Load Chime: " + str(saveData["loadChime"]))
                 print()
                 print("Required Python Libraries Installed:")
                 for x in installedModuleList:
                     print("- " + x)
                 print()
                 input("Press Enter to return to " + NAME_MAIN_MENU)
-            if prompt2 == "4": # Exit
+            if prompt2 == "5": # Exit
                 break
     if prompt1 == "4": # Support Links
         while(True):
