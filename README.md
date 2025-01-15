@@ -1,4 +1,4 @@
-# SquishyCoopManager
+# SM64CoopDX Manager
 ### A tool made for managing SM64CoopDX and it's mods
 
 <img src="images/menu-screenshot.png">
