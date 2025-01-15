@@ -405,7 +405,7 @@ while(True):
                 break
             if prompt2 == "3": # Open Appdata
                 open_folder(MANAGED_MODS_DIR)
-            if prompt2 == "4": # Back
+            if prompt2 == "4" or prompt2 == "back": # Back
                 break
     if prompt1 == "3": # Manager Options
         while(True):
@@ -458,7 +458,7 @@ while(True):
                     print("- " + x)
                 print()
                 input("Press Enter to return to " + NAME_MAIN_MENU)
-            if prompt2 == "5": # Exit
+            if prompt2 == "5" or prompt2 == "back": # Exit
                 break
     if prompt1 == "4": # Support Links
         while(True):
@@ -476,7 +476,7 @@ while(True):
                 webbrowser.open("https://github.com/Squishy6094/sm64coopdx-manager", new=0, autoraise=True)
             if prompt2 == "3":
                 webbrowser.open("https://discord.gg/G2zMwjbxdh", new=0, autoraise=True)
-            if prompt2 == "4" or prompt2 == "":
+            if prompt2 == "4" or prompt2 == "" or prompt2 == "back":
                 break
     if prompt1 == "5": # Exit
         break
