@@ -114,7 +114,7 @@ def clear_with_header():
 
     updateString = github_version_check()
         
-    header = NAME_MANAGER + " v" + VERSION + " - " + DATE
+    header = " " + NAME_MANAGER + " v" + VERSION + " - " + DATE + " "
     headerBreak = ""
     while len(headerBreak) < len(header):
         headerBreak = headerBreak + "-"
@@ -134,8 +134,6 @@ def sub_header(headerText):
         subheaderText = subheaderText + "-"
     print(subheaderText)
 
-
-
 def read_or_new_pickle(path, default):
     if os.path.isfile(path):
         with open(path, "rb") as f:
@@ -153,6 +151,7 @@ saveData = {
     "coopDir": (USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
     "autoBackup": True,
     "loadChime": True,
+    "showDirs": True,
     "mods-backup": False,
 }
 saveDataPickle = read_or_new_pickle(SAVE_DIR, saveData)
@@ -207,8 +206,6 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         print("Appdata Mods Folder Found!")
         print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
         unhide_tree(dir)
-        #print("Cleaning old Backups...")
-        #shutil.rmtree(MANAGED_MODS_DIR + "/backup", ignore_errors=True)
         print("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
         shutil.copytree(dir, MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True)
         if wipeModFolder:
@@ -285,12 +282,17 @@ def boot_coop():
     coopDirectory = saveData["coopDir"]
     print("Standard Boot:")
     load_mod_folders()
-    print("Booting " + NAME_SM64COOPDX + " from Directory: '" + coopDirectory + "'")
+    if saveData["showDirs"]:
+        print("Booting " + NAME_SM64COOPDX + " from Directory: '" + coopDirectory + "'")
+    else:
+        print("Booting " + NAME_SM64COOPDX)
     open_file(coopDirectory)
 
 
 def config_coop_dir():
     print("Please enter a new Directory to use for " + NAME_SM64COOPDX)
+    if not saveData["showDirs"]:
+        print("Anything typed below is not censored! Configure with caution!")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
         inputDir = input("> ")
@@ -352,7 +354,8 @@ while(True):
                     modNum = 0
                     if len(mods) < 1:
                         print(NAME_MANAGER + "'s Managed Mods Folder is empty!")
-                        print("Your Managed Mods can be found at: '" + MANAGED_MODS_DIR + "'")
+                        if saveData["showDirs"]:
+                            print("Your Managed Mods can be found at: '" + MANAGED_MODS_DIR + "'")
                         input("Press Enter to return to " + NAME_MODS_MENU)
                         break
                     sub_header(NAME_FOLDER_OPTIONS)
@@ -369,6 +372,10 @@ while(True):
                             spacing = spacing + "."
                         spacing = spacing + " "
                         print(str(modNum) + ". " + x + spacing + ("(O) Enabled" if modOnOff else "(X) Disabled"))
+                    print()
+                    print("Mods can be sorted in your 'managed-mods' Folder")
+                    if saveData["showDirs"]:
+                        print("(" + MANAGED_MODS_DIR + ")")
                     print()
                     print("Type a Folder's Name / Number to Toggle it")
                     print("Type 'all' to Enable all Folders")
@@ -412,10 +419,11 @@ while(True):
             clear_with_header()
             sub_header(NAME_MANAGER_OPTIONS)
             print("1. Configure Directory")
-            print("2. Toggle Auto-Backup (" + str(saveData["autoBackup"]) + ")")
-            print("3. Toggle Load Chime (" + str(saveData["loadChime"]) + ")")
-            print("4. " + NAME_MANAGER + " Info")
-            print("5. Back")
+            print("2. Auto-Backup (" + str(saveData["autoBackup"]) + ")")
+            print("3. Load Chime (" + str(saveData["loadChime"]) + ")")
+            print("4. Streamer Mode (" + str(not saveData["showDirs"]) + ")")
+            print("5. " + NAME_MANAGER + " Info")
+            print("6. Back")
 
             prompt2 = input("> ")
             if prompt2 == "1": # Set Coop Directory
@@ -429,9 +437,11 @@ while(True):
                         break
             if prompt2 == "2": # Set Coop Directory
                 saveData["autoBackup"] = save_field("autoBackup", not saveData["autoBackup"])
-            if prompt2 == "3": # Set Coop Directory
+            if prompt2 == "3": # Set Load Chime
                 saveData["loadChime"] = save_field("loadChime", not saveData["loadChime"])
-            if prompt2 == "4": # Manager Info
+            if prompt2 == "4": # Set Hide Dirs
+                saveData["showDirs"] = save_field("showDirs", not saveData["showDirs"])
+            if prompt2 == "5": # Manager Info
                 clear_with_header()
                 sub_header("Manager Info")
                 print(NAME_MANAGER + " by Squishy6094")
@@ -440,17 +450,24 @@ while(True):
                 sub_header("User Info")
                 # Executible Exists
                 if os.path.isfile(saveData["coopDir"]):
-                    print("Executible Directory: '" + saveData["coopDir"] + "'")
+                    if saveData["showDirs"]:
+                        print("Executible Directory: '" + saveData["coopDir"] + "'")
+                    else:
+                        print("Executible Directory Valid")
                 else:
                     print("Executible Directory Invalid")
                 # Appdata Exists
                 if os.path.isdir(APPDATA_DIR):
-                    print("Appdata Directory: '" + APPDATA_DIR + "'")
+                    if saveData["showDirs"]:
+                        print("Appdata Directory: '" + APPDATA_DIR + "'")
+                    else:
+                        print("Appdata Directory Valid")
                 else:
                     print("Appdata Directory Invalid")
                 # Other Save Data
                 print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
                 print("Load Chime: " + str(saveData["loadChime"]))
+                print("Streamer Mode (Hide Directories): " + str(not saveData["loadChime"]))
                 print()
                 sub_header("Library Info")
                 print("Required Python Libraries Installed:")
@@ -458,7 +475,7 @@ while(True):
                     print("- " + x)
                 print()
                 input("Press Enter to return to " + NAME_MAIN_MENU)
-            if prompt2 == "5" or prompt2 == "back": # Exit
+            if prompt2 == "6" or prompt2 == "back": # Exit
                 break
     if prompt1 == "4": # Support Links
         while(True):
