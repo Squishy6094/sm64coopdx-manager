@@ -82,8 +82,15 @@ queueRestart = False
 def check_module(package):
     packageSpec = importlib.util.find_spec(package)
     if packageSpec == None:
+        clear()
         print("Installing Dependancy '" + package + "'")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+        except:
+            print("Could not install Dependancy '" + package + "'")
+            print("Please install this Dependancy via '-m pip install " + package + "' in your Terminal")
+            input("Press Enter to Restart Program")
+            os.execv(sys.executable, ['python'] + sys.argv)
         return True
     else:
         installedModuleList.append(package)
@@ -287,7 +294,7 @@ def boot_coop():
 
 def config_coop_dir():
     clear_with_header()
-    print("Please enter a new Directory to use for " + NAME_SM64COOPDX)
+    print("Please enter a new Path to use for " + NAME_SM64COOPDX)
     if not saveData["showDirs"]:
         print("Anything typed below is not censored! Configure with caution!")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
@@ -463,11 +470,11 @@ def menu_manager_info():
     # Executible Exists
     if os.path.isfile(saveData["coopDir"]):
         if saveData["showDirs"]:
-            print("Executible Directory: '" + saveData["coopDir"] + "'")
+            print("Executible Path: '" + saveData["coopDir"] + "'")
         else:
-            print("Executible Directory Valid")
+            print("Executible Path Valid")
     else:
-        print("Executible Directory Invalid")
+        print("Executible Path Invalid")
     # Appdata Exists
     if os.path.isdir(APPDATA_DIR):
         if saveData["showDirs"]:
