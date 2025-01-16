@@ -192,6 +192,7 @@ def folder_from_file_dir(filename):
     return returnString
 
 def backup_mods(wipeModFolder=False, forceBackup=False):
+    clear_with_header()
     dir = APPDATA_DIR + "/mods"
     if not saveData["autoBackup"]:
         if not forceBackup:
@@ -290,6 +291,7 @@ def boot_coop():
 
 
 def config_coop_dir():
+    clear_with_header()
     print("Please enter a new Directory to use for " + NAME_SM64COOPDX)
     if not saveData["showDirs"]:
         print("Anything typed below is not censored! Configure with caution!")
@@ -297,205 +299,246 @@ def config_coop_dir():
     while(True):
         inputDir = input("> ")
         if os.path.isfile(inputDir):
-            return inputDir
+            saveData["coopDir"] = save_field("coopDir", inputDir)
+            return True
         elif inputDir == "back":
-            break
+            return False
         else:
             print("Directory not found, please enter a valid directory")
 
-# Main Options
+#############################
+## Automatic Menu Creation ##
+#############################
+
+menuTable = []
+def menu_clear():
+    menuTable.clear()
+    
+def menu_back():
+    return True
+
+def menu_failsafe():
+    return False
+
+def menu_option_add(name="Option", function=menu_failsafe):
+    menuTable.append({"name": name, "func": function})
+    #print(menuTable)
+    #print(len(menuTable))
+    print(str(len(menuTable)) + ". " + menuTable[(len(menuTable) - 1)]["name"])
+
+def menu_input():
+    userInput = input("> ")
+    optionCount = 0
+    for x in menuTable:
+        optionCount = optionCount + 1
+        if userInput == str(optionCount) or userInput.lower() == str(x["name"]).lower():
+            return x["func"]() if x["func"] != None else False
+    return False
+
+####################
+## Menu Functions ##
+####################
+
+def menu_main_open_coop():
+    while(True):
+        clear_with_header()
+        if os.path.isfile(saveData["coopDir"]):
+            boot_coop()
+            break
+        else:
+            print(NAME_SM64COOPDX + " not found at Directory '" + saveData["coopDir"] + "'")
+            config = config_coop_dir()
+            if config == True:
+                saveData["coopDir"] = save_field("coopDir", config)
+                clear_with_header()
+                boot_coop()
+                break
+            else:
+                break
+
+# Mod Options
+
+def menu_mod_folder_config():
+    while(True):
+        clear_with_header()
+        mods = get_mod_folders()
+        modNum = 0
+        if len(mods) < 1:
+            print(NAME_MANAGER + "'s Managed Mods Folder is empty!")
+            if saveData["showDirs"]:
+                print("Your Managed Mods can be found at: '" + MANAGED_MODS_DIR + "'")
+            input("Press Enter to return to " + NAME_MODS_MENU)
+            break
+        sub_header(NAME_FOLDER_OPTIONS)
+        for x in mods:
+            modOnOff = False
+            modNum = modNum + 1
+            try:
+                modOnOff = saveData["mods-" + x]
+            except:
+                saveData["mods-" + x] = save_field("mods-" + x, True)
+                modOnOff = True
+            spacing = " "
+            while len(spacing) < 25 - (len(x) + 2):
+                spacing = spacing + "."
+            spacing = spacing + " "
+            print(str(modNum) + ". " + x + spacing + ("(O) Enabled" if modOnOff else "(X) Disabled"))
+        print()
+        print("Mods can be sorted in your 'managed-mods' Folder")
+        if saveData["showDirs"]:
+            print("(" + MANAGED_MODS_DIR + ")")
+        print()
+        print("Type a Folder's Name / Number to Toggle it")
+        print("Type 'all' or 'none' to Enable or Disable all Folders")
+        print("Type 'apply' to Apply Current Folders without leaving")
+        print("Type 'back' to return to " + NAME_MODS_MENU)
+        prompt3 = input("> ")
+        if prompt3 == "all":
+            for x in mods:
+                save_field("mods-" + x, True)
+            save_field("mods-backup", False)
+        if prompt3 == "none":
+            for x in mods:
+                save_field("mods-" + x, False)
+        if prompt3 == "apply" or prompt3 == "":
+            clear_with_header()
+            load_mod_folders()
+        if prompt3 == "back":
+            clear_with_header()
+            load_mod_folders()
+            break
+        modNum = 0
+        for x in mods:
+            modNum = modNum + 1
+            modNumString = str(modNum)
+            if prompt3 == modNumString or prompt3.lower() == x.lower():
+                modOnOff = False
+                try:
+                    modOnOff = saveData["mods-" + x]
+                except:
+                    modOnOff = True
+                save_field("mods-" + x, (not modOnOff))
+
+def menu_mod_backup_clear():
+    backup_mods(True, True)
+
+def menu_mod_open_managed_folder():
+    open_folder(MANAGED_MODS_DIR)
+
+def menu_main_mod_options():
+    while(True):
+        clear_with_header()
+        if not os.path.isdir(APPDATA_DIR):
+            print("Appdata Directory does not exist, please open " + NAME_SM64COOPDX + " first!")
+            input("Press Enter to return to " + NAME_MAIN_MENU)
+            clear()
+        else:
+            sub_header(NAME_MODS_MENU)
+            menu_clear()
+            menu_option_add("Configure Loaded Mod Folders", menu_mod_folder_config)
+            menu_option_add("Backup and Clear Mods Folder", menu_mod_backup_clear)
+            menu_option_add("Open Managed Mods Folder", menu_mod_open_managed_folder)
+            menu_option_add("Back", menu_back)
+            if menu_input():
+                break
+
+# Manager Options
+            
+def toggle_save_field(saveString):
+    if saveData[saveString] != None:
+        saveData[saveString] = save_field(saveString, not saveData[saveString])
+
+def menu_manager_toggle_backup():
+    toggle_save_field("autoBackup")
+def menu_manager_toggle_chime():
+    toggle_save_field("loadChime")
+def menu_manager_toggle_dirs():
+    toggle_save_field("showDirs")
+
+def menu_manager_info():
+    clear_with_header()
+    sub_header("Manager Info")
+    print(NAME_MANAGER + " by Squishy6094")
+    print("Version " + VERSION + " / Github Version " + str(github_version_check()).replace("v", ""))
+    print()
+    sub_header("User Info")
+    # Executible Exists
+    if os.path.isfile(saveData["coopDir"]):
+        if saveData["showDirs"]:
+            print("Executible Directory: '" + saveData["coopDir"] + "'")
+        else:
+            print("Executible Directory Valid")
+    else:
+        print("Executible Directory Invalid")
+    # Appdata Exists
+    if os.path.isdir(APPDATA_DIR):
+        if saveData["showDirs"]:
+            print("Appdata Directory: '" + APPDATA_DIR + "'")
+        else:
+            print("Appdata Directory Valid")
+    else:
+        print("Appdata Directory Invalid")
+    # Other Save Data
+    print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
+    print("Load Chime: " + str(saveData["loadChime"]))
+    print("Streamer Mode (Hide Directories): " + str(not saveData["loadChime"]))
+    print()
+    sub_header("Library Info")
+    print("Required Python Libraries Installed:")
+    for x in installedModuleList:
+        print("- " + x)
+    print()
+    input("Press Enter to return to " + NAME_MAIN_MENU)
+
+def menu_manager_link_github():
+    webbrowser.open("https://github.com/Squishy6094/sm64coopdx-manager", new=0, autoraise=True)
+def menu_manager_link_community():
+    webbrowser.open("https://discord.gg/HtpXAxrgAw", new=0, autoraise=True)
+def menu_manager_link_central():
+    webbrowser.open("https://discord.gg/G2zMwjbxdh", new=0, autoraise=True)
+
+def menu_manager_links():
+    while(True):
+        clear_with_header()
+        sub_header("Support Links:")
+        menu_clear()
+        menu_option_add(NAME_MANAGER + " - Issue Reporting - (Github)", menu_manager_link_github)
+        menu_option_add("Squishy Community - Manager Support - (Discord)", menu_manager_link_community)
+        menu_option_add("Coop Central - " + NAME_SM64COOPDX + " Support - (Discord)", menu_manager_link_central)
+        menu_option_add("Back", menu_back)
+        if menu_input():
+            break
+    
+def menu_main_manager_options():
+    while(True):
+        clear_with_header()
+        sub_header(NAME_MANAGER_OPTIONS)
+        menu_clear()
+        menu_option_add("Configure Directory", config_coop_dir)
+        menu_option_add(NAME_MANAGER + " Info", menu_manager_info)
+        menu_option_add(NAME_MANAGER + " Support Links", menu_manager_links)
+        menu_option_add("Auto-Backup (" + str(saveData["autoBackup"]) + ")", menu_manager_toggle_backup)
+        menu_option_add("Load Chime (" + str(saveData["loadChime"]) + ")", menu_manager_toggle_chime)
+        menu_option_add("Streamer Mode (" + str(not saveData["showDirs"]) + ")", menu_manager_toggle_dirs)
+        menu_option_add("Back", menu_back)
+        if menu_input():
+            break
+
+
+###############
+## Main Menu ##
+###############
+
 notify()
 while(True):
     clear_with_header()
     sub_header(NAME_MAIN_MENU)
-    print("1. Open " + NAME_SM64COOPDX)
-    print("2. Mod Options")
-    print("3. Manager Options")
-    print("4. Support Links")
-    print("5. Close Program")
-
-    prompt1 = input("> ")
-    if prompt1 == "1": # Open Coop
-        while(True):
-            clear_with_header()
-            if os.path.isfile(saveData["coopDir"]):
-                boot_coop()
-                break
-            else:
-                print(NAME_SM64COOPDX + " not found at Directory '" + saveData["coopDir"] + "'")
-                config = config_coop_dir()
-                if config != None:
-                    saveData["coopDir"] = save_field("coopDir", config)
-                    clear_with_header()
-                    boot_coop()
-                    break
-                else:
-                    break
-    if prompt1 == "2": # Mod Options
-        while(True):
-            clear_with_header()
-            if not os.path.isdir(APPDATA_DIR):
-                print("Appdata Directory does not exist, please open " + NAME_SM64COOPDX + " first!")
-                input("Press Enter to return to " + NAME_MAIN_MENU)
-                clear()
-            else:
-                sub_header(NAME_MODS_MENU)
-                print("1. Configure Loaded Mod Folders")
-                print("2. Backup and Clear Mods Folder")
-                print("3. Open Managed Mods Folder")
-                print("4. Back")
-
-            prompt2 = input("> ")
-            if prompt2 == "1": # Mod Folder Config
-                while(True):
-                    clear_with_header()
-                    #oldstr.replace("M", "")
-                    mods = get_mod_folders()
-                    modNum = 0
-                    if len(mods) < 1:
-                        print(NAME_MANAGER + "'s Managed Mods Folder is empty!")
-                        if saveData["showDirs"]:
-                            print("Your Managed Mods can be found at: '" + MANAGED_MODS_DIR + "'")
-                        input("Press Enter to return to " + NAME_MODS_MENU)
-                        break
-                    sub_header(NAME_FOLDER_OPTIONS)
-                    for x in mods:
-                        modOnOff = False
-                        modNum = modNum + 1
-                        try:
-                            modOnOff = saveData["mods-" + x]
-                        except:
-                            saveData["mods-" + x] = save_field("mods-" + x, True)
-                            modOnOff = True
-                        spacing = " "
-                        while len(spacing) < 25 - (len(x) + 2):
-                            spacing = spacing + "."
-                        spacing = spacing + " "
-                        print(str(modNum) + ". " + x + spacing + ("(O) Enabled" if modOnOff else "(X) Disabled"))
-                    print()
-                    print("Mods can be sorted in your 'managed-mods' Folder")
-                    if saveData["showDirs"]:
-                        print("(" + MANAGED_MODS_DIR + ")")
-                    print()
-                    print("Type a Folder's Name / Number to Toggle it")
-                    print("Type 'all' or 'none' to Enable or Disable all Folders")
-                    print("Type 'apply' to Apply Current Folders without leaving")
-                    print("Type 'back' to return to " + NAME_MODS_MENU)
-                    prompt3 = input("> ")
-                    if prompt3 == "all":
-                        for x in mods:
-                            save_field("mods-" + x, True)
-                        save_field("mods-backup", False)
-                    if prompt3 == "none":
-                        for x in mods:
-                            save_field("mods-" + x, False)
-                    if prompt3 == "apply" or prompt3 == "":
-                        clear_with_header()
-                        load_mod_folders()
-                    if prompt3 == "back":
-                        clear_with_header()
-                        load_mod_folders()
-                        break
-                    modNum = 0
-                    for x in mods:
-                        modNum = modNum + 1
-                        modNumString = str(modNum)
-                        if prompt3 == modNumString or prompt3.lower() == x.lower():
-                            modOnOff = False
-                            try:
-                                modOnOff = saveData["mods-" + x]
-                            except:
-                                modOnOff = True
-                            save_field("mods-" + x, (not modOnOff))
-            if prompt2 == "2": # Backup and Clear Mods
-                backup_mods(True, True)
-                break
-            if prompt2 == "3": # Open Appdata
-                open_folder(MANAGED_MODS_DIR)
-            if prompt2 == "4" or prompt2 == "back": # Back
-                break
-    if prompt1 == "3": # Manager Options
-        while(True):
-            clear_with_header()
-            sub_header(NAME_MANAGER_OPTIONS)
-            print("1. Configure Directory")
-            print("2. Auto-Backup (" + str(saveData["autoBackup"]) + ")")
-            print("3. Load Chime (" + str(saveData["loadChime"]) + ")")
-            print("4. Streamer Mode (" + str(not saveData["showDirs"]) + ")")
-            print("5. " + NAME_MANAGER + " Info")
-            print("6. Back")
-
-            prompt2 = input("> ")
-            if prompt2 == "1": # Set Coop Directory
-                clear_with_header()
-                while(True):
-                    config = config_coop_dir()
-                    if config != None:
-                        saveData["coopDir"] = save_field("coopDir", config)
-                        break
-                    else:
-                        break
-            if prompt2 == "2": # Set Coop Directory
-                saveData["autoBackup"] = save_field("autoBackup", not saveData["autoBackup"])
-            if prompt2 == "3": # Set Load Chime
-                saveData["loadChime"] = save_field("loadChime", not saveData["loadChime"])
-            if prompt2 == "4": # Set Hide Dirs
-                saveData["showDirs"] = save_field("showDirs", not saveData["showDirs"])
-            if prompt2 == "5": # Manager Info
-                clear_with_header()
-                sub_header("Manager Info")
-                print(NAME_MANAGER + " by Squishy6094")
-                print("Version " + VERSION + " / Github Version " + str(github_version_check()).replace("v", ""))
-                print()
-                sub_header("User Info")
-                # Executible Exists
-                if os.path.isfile(saveData["coopDir"]):
-                    if saveData["showDirs"]:
-                        print("Executible Directory: '" + saveData["coopDir"] + "'")
-                    else:
-                        print("Executible Directory Valid")
-                else:
-                    print("Executible Directory Invalid")
-                # Appdata Exists
-                if os.path.isdir(APPDATA_DIR):
-                    if saveData["showDirs"]:
-                        print("Appdata Directory: '" + APPDATA_DIR + "'")
-                    else:
-                        print("Appdata Directory Valid")
-                else:
-                    print("Appdata Directory Invalid")
-                # Other Save Data
-                print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
-                print("Load Chime: " + str(saveData["loadChime"]))
-                print("Streamer Mode (Hide Directories): " + str(not saveData["loadChime"]))
-                print()
-                sub_header("Library Info")
-                print("Required Python Libraries Installed:")
-                for x in installedModuleList:
-                    print("- " + x)
-                print()
-                input("Press Enter to return to " + NAME_MAIN_MENU)
-            if prompt2 == "6" or prompt2 == "back": # Exit
-                break
-    if prompt1 == "4": # Support Links
-        while(True):
-            clear_with_header()
-            print("Support Links:")
-            print("1. Squishy Community - Manager Support - (Discord)")
-            print("2. " + NAME_MANAGER + " - Issue Reporting - (Github)")
-            print("3. Coop Central - " + NAME_SM64COOPDX + " Support - (Discord)")
-            print("4. Back")
-
-            prompt2 = input("> ")
-            if prompt2 == "1":
-                webbrowser.open("https://discord.gg/HtpXAxrgAw", new=0, autoraise=True)
-            if prompt2 == "2":
-                webbrowser.open("https://github.com/Squishy6094/sm64coopdx-manager", new=0, autoraise=True)
-            if prompt2 == "3":
-                webbrowser.open("https://discord.gg/G2zMwjbxdh", new=0, autoraise=True)
-            if prompt2 == "4" or prompt2 == "" or prompt2 == "back":
-                break
-    if prompt1 == "5": # Exit
+    menu_clear()
+    menu_option_add("Open " + NAME_SM64COOPDX, menu_main_open_coop)
+    menu_option_add("Mod Options", menu_main_mod_options)
+    menu_option_add("Manager Options", menu_main_manager_options)
+    menu_option_add("Close Program", menu_back)
+    if menu_input():
         break
 clear()
 exit()
