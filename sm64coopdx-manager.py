@@ -14,14 +14,12 @@ import fnmatch
 
 # Clear Console
 def clear():
-    # for windows
-    if os.name == 'nt':
+    if os.name == 'nt': # Windows
         _ = os.system('cls')
-    # for mac and linux
-    else:
+    else: # Linux
         _ = os.system('clear')
 
-# Ensure Errors are readable and Reportable
+# Ensure Errors are Readable and Reportable
 def show_exception_and_exit(exc_type, exc_value, tb):
     clear()
     import traceback
@@ -72,7 +70,6 @@ def get_appdata_dir():
         return generalAppdata + "sm64ex-coop"
     else:
         return generalAppdata + "sm64coopdx"
-
 APPDATA_DIR = get_appdata_dir()
 MANAGED_MODS_DIR = APPDATA_DIR + "/managed-mods"
 if not os.path.isdir(MANAGED_MODS_DIR):
@@ -112,9 +109,7 @@ def github_version_check():
 
 def clear_with_header():
     clear()
-
     updateString = github_version_check()
-        
     header = " " + NAME_MANAGER + " v" + VERSION + " - " + DATE + " "
     headerBreak = ""
     while len(headerBreak) < len(header):
@@ -126,12 +121,11 @@ def clear_with_header():
     print(headerBreak)
     print()
 
-SUB_HEADER_LENGTH = 27
-def sub_header(headerText="|"):
+def sub_header(headerText="|", length=27):
     subheaderText = " " + headerText + " "
-    while len(subheaderText) < SUB_HEADER_LENGTH:
+    while len(subheaderText) < length:
         subheaderText = "=" + subheaderText + "="
-    if len(subheaderText) == SUB_HEADER_LENGTH:
+    if len(subheaderText) == length:
         subheaderText = subheaderText + "="
     print(subheaderText)
 
@@ -147,7 +141,7 @@ def read_or_new_pickle(path, default):
             pickle.dump(default, f)
     return default
 
-# Save Data
+# Save Data Handler
 saveData = {
     "coopDir": (USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
     "autoBackup": True,
@@ -158,7 +152,6 @@ saveData = {
 saveDataPickle = read_or_new_pickle(SAVE_DIR, saveData)
 for s in saveDataPickle:
     saveData[s] = saveDataPickle[s]
-
 def save_field(field, value):
     saveData[field] = value
     with open(SAVE_DIR, "wb") as f:
@@ -170,10 +163,7 @@ def notify():
         chime.theme('mario')
         chime.success(sync=True)
 
-def del_rw(action, name, exc):
-    os.chmod(name, stat.S_IWRITE)
-    os.remove(name)
-
+# File Management
 def unhide_tree(inputDir):
     for root, dirs, files in os.walk(inputDir):  
         for dir in dirs:
@@ -191,6 +181,10 @@ def folder_from_file_dir(filename):
         if dirCount < len(splitDir):
             returnString = returnString + x + "/"
     return returnString
+
+def del_rw(action, name, exc):
+    os.chmod(name, stat.S_IWRITE)
+    os.remove(name)
 
 def backup_mods(wipeModFolder=False, forceBackup=False):
     dir = APPDATA_DIR + "/mods"
@@ -224,6 +218,7 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         print("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
         shutil.move(dir, MANAGED_MODS_DIR + "/default")
 
+# Backup on Bootup
 clear_with_header()
 backup_mods(False)
 
@@ -322,8 +317,6 @@ def menu_failsafe():
 
 def menu_option_add(name="Option", function=menu_failsafe):
     menuTable.append({"name": name, "func": function})
-    #print(menuTable)
-    #print(len(menuTable))
     print(str(len(menuTable)) + ". " + menuTable[(len(menuTable) - 1)]["name"])
 
 def menu_input():
@@ -361,7 +354,6 @@ def menu_main_open_coop():
                 break
 
 # Mod Options
-
 def menu_mod_folder_config():
     while(True):
         clear_with_header()
@@ -449,7 +441,6 @@ def menu_main_mod_options():
                 break
 
 # Manager Options
-            
 def toggle_save_field(saveString):
     if saveData[saveString] != None:
         saveData[saveString] = save_field(saveString, not saveData[saveString])
