@@ -192,7 +192,6 @@ def folder_from_file_dir(filename):
     return returnString
 
 def backup_mods(wipeModFolder=False, forceBackup=False):
-    clear_with_header()
     dir = APPDATA_DIR + "/mods"
     if not saveData["autoBackup"]:
         if not forceBackup:
@@ -420,6 +419,7 @@ def menu_mod_folder_config():
                 save_field("mods-" + x, (not modOnOff))
 
 def menu_mod_backup_clear():
+    clear_with_header()
     backup_mods(True, True)
 
 def menu_mod_open_managed_folder():
