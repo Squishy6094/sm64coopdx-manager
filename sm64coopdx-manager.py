@@ -37,7 +37,8 @@ NAME_SM64COOPDX = "SM64CoopDX"
 NAME_MANAGER = NAME_SM64COOPDX + " Manager"
 NAME_MAIN_MENU = "Main Options"
 NAME_MODS_MENU = "Mod Options"
-NAME_MANAGER_OPTIONS = "Manager Options"
+NAME_MANAGER_CONFIG = "Manager Config"
+NAME_MANAGER_HELP = "Manager Help"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
 VERSION = "1"
 DATE = datetime.now().strftime("%m/%d/%Y")
@@ -117,7 +118,7 @@ def clear_with_header():
     header = " " + NAME_MANAGER + " v" + VERSION + " - " + DATE + " "
     headerBreak = ""
     while len(headerBreak) < len(header):
-        headerBreak = headerBreak + "-"
+        headerBreak = headerBreak + "="
     print(headerBreak)
     print(header)
     if updateString != None and updateString != "v" + VERSION:
@@ -125,13 +126,13 @@ def clear_with_header():
     print(headerBreak)
     print()
 
-SUB_HEADER_LENGTH = 25
-def sub_header(headerText):
+SUB_HEADER_LENGTH = 27
+def sub_header(headerText="|"):
     subheaderText = " " + headerText + " "
     while len(subheaderText) < SUB_HEADER_LENGTH:
-        subheaderText = "-" + subheaderText + "-"
+        subheaderText = "=" + subheaderText + "="
     if len(subheaderText) == SUB_HEADER_LENGTH:
-        subheaderText = subheaderText + "-"
+        subheaderText = subheaderText + "="
     print(subheaderText)
 
 def read_or_new_pickle(path, default):
@@ -280,7 +281,7 @@ def open_folder(foldername):
 
 def boot_coop():
     coopDirectory = saveData["coopDir"]
-    print("Standard Boot:")
+    sub_header("Standard Boot")
     load_mod_folders()
     if saveData["showDirs"]:
         print("Booting " + NAME_SM64COOPDX + " from Directory: '" + coopDirectory + "'")
@@ -327,11 +328,15 @@ def menu_option_add(name="Option", function=menu_failsafe):
 
 def menu_input():
     userInput = input("> ")
+    if userInput == "":
+        return False
     optionCount = 0
     for x in menuTable:
         optionCount = optionCount + 1
         if userInput == str(optionCount) or userInput.lower() == str(x["name"]).lower():
+            menu_clear()
             return x["func"]() if x["func"] != None else False
+    menu_clear()
     return False
 
 ####################
@@ -435,9 +440,10 @@ def menu_main_mod_options():
         else:
             sub_header(NAME_MODS_MENU)
             menu_clear()
-            menu_option_add("Configure Loaded Mod Folders", menu_mod_folder_config)
-            menu_option_add("Backup and Clear Mods Folder", menu_mod_backup_clear)
+            menu_option_add("Config Managed Mods", menu_mod_folder_config)
+            menu_option_add("Backup and Clear", menu_mod_backup_clear)
             menu_option_add("Open Managed Mods Folder", menu_mod_open_managed_folder)
+            sub_header()
             menu_option_add("Back", menu_back)
             if menu_input():
                 break
@@ -460,7 +466,6 @@ def menu_manager_info():
     sub_header("Manager Info")
     print(NAME_MANAGER + " by Squishy6094")
     print("Version " + VERSION + " / Github Version " + str(github_version_check()).replace("v", ""))
-    print()
     sub_header("User Info")
     # Executible Exists
     if os.path.isfile(saveData["coopDir"]):
@@ -482,12 +487,10 @@ def menu_manager_info():
     print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
     print("Load Chime: " + str(saveData["loadChime"]))
     print("Streamer Mode (Hide Directories): " + str(not saveData["loadChime"]))
-    print()
     sub_header("Library Info")
     print("Required Python Libraries Installed:")
     for x in installedModuleList:
         print("- " + x)
-    print()
     input("Press Enter to return to " + NAME_MAIN_MENU)
 
 def menu_manager_link_github():
@@ -505,6 +508,7 @@ def menu_manager_links():
         menu_option_add(NAME_MANAGER + " - Issue Reporting - (Github)", menu_manager_link_github)
         menu_option_add("Squishy Community - Manager Support - (Discord)", menu_manager_link_community)
         menu_option_add("Coop Central - " + NAME_SM64COOPDX + " Support - (Discord)", menu_manager_link_central)
+        sub_header()
         menu_option_add("Back", menu_back)
         if menu_input():
             break
@@ -512,14 +516,16 @@ def menu_manager_links():
 def menu_main_manager_options():
     while(True):
         clear_with_header()
-        sub_header(NAME_MANAGER_OPTIONS)
+        sub_header(NAME_MANAGER_CONFIG)
         menu_clear()
         menu_option_add("Configure Directory", config_coop_dir)
-        menu_option_add(NAME_MANAGER + " Info", menu_manager_info)
-        menu_option_add(NAME_MANAGER + " Support Links", menu_manager_links)
         menu_option_add("Auto-Backup (" + str(saveData["autoBackup"]) + ")", menu_manager_toggle_backup)
         menu_option_add("Load Chime (" + str(saveData["loadChime"]) + ")", menu_manager_toggle_chime)
         menu_option_add("Streamer Mode (" + str(not saveData["showDirs"]) + ")", menu_manager_toggle_dirs)
+        sub_header(NAME_MANAGER_HELP)
+        menu_option_add("Info", menu_manager_info)
+        menu_option_add("Support Links", menu_manager_links)
+        sub_header()
         menu_option_add("Back", menu_back)
         if menu_input():
             break
@@ -537,6 +543,7 @@ while(True):
     menu_option_add("Open " + NAME_SM64COOPDX, menu_main_open_coop)
     menu_option_add("Mod Options", menu_main_mod_options)
     menu_option_add("Manager Options", menu_main_manager_options)
+    sub_header()
     menu_option_add("Close Program", menu_back)
     if menu_input():
         break
