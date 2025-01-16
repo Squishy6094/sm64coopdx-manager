@@ -5,7 +5,7 @@
 
 ## Goals:
 1. (Achieved) A User-Friendly console based mod organizer made to improve Loading / Mod Cache times
-2. (WIP) An Automatic SM64CoopDX Update Notifier and Installer
+2. (Future Update) An Automatic SM64CoopDX Update Notifier and Installer
 
 ## Current Functionality:
 1. Mod Organization
@@ -18,3 +18,5 @@
 ## Planned Functionality:
 1. Automatic SM64CoopDX Update Installation
 2. (?) Automatic Mod Update Installation
+3. (?) DynOS Organization
+4. (?) SM64CoopDX Config Editor/Option Menu
