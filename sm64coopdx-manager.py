@@ -323,10 +323,12 @@ def menu_input():
     userInput = input("> ")
     if userInput == "":
         return False
+    userInput = userInput.lower()
     optionCount = 0
     for x in menuTable:
         optionCount = optionCount + 1
-        if userInput == str(optionCount) or userInput.lower() == str(x["name"]).lower():
+        optionName = str(x["name"]).lower()
+        if userInput == str(optionCount) or userInput == optionName or userInput == optionName.split(" ")[0]:
             menu_clear()
             return x["func"]() if x["func"] != None else False
     menu_clear()
