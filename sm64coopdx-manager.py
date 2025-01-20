@@ -154,6 +154,7 @@ saveData = {
     "autoBackup": True,
     "loadChime": True,
     "showDirs": True,
+    "skipUncompiled": False,
     "mods-backup": False,
 }
 saveDataPickle = read_or_new_pickle(SAVE_DIR, saveData)
@@ -171,12 +172,20 @@ def notify():
         chime.success(sync=True)
 
 # File Management
+def file_unpermitted(filepath):
+    fileStats = os.stat(filepath).st_file_attributes
+    return not (bool(fileStats & stat.S_IRWXU) and bool(fileStats & stat.FILE_ATTRIBUTE_HIDDEN))
+
 def unhide_tree(inputDir):
     for root, dirs, files in os.walk(inputDir):  
         for dir in dirs:
-            os.chmod(os.path.join(root, dir), stat.S_IRWXU)
+            path = os.path.join(root, dir)
+            if file_unpermitted(path):
+                os.chmod(path, stat.S_IRWXU)
         for file in files:
-            os.chmod(os.path.join(root, file), stat.S_IRWXU)    
+            path = os.path.join(root, file)
+            if file_unpermitted(path):
+                os.chmod(path, stat.S_IRWXU)
 
 def folder_from_file_dir(filename):
     filename = filename.replace("\\", "/")
@@ -208,8 +217,10 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         print("Appdata Mods Folder Found!")
         print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
         unhide_tree(dir)
+        print("Ensuring Backups Folder is writeable...")
+        unhide_tree(MANAGED_MODS_DIR + "/backup")
         print("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
-        shutil.copytree(dir, MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True)
+        shutil.copytree(dir, MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True, copy_function=shutil.copy)
         if wipeModFolder:
             print("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
             shutil.rmtree(dir, ignore_errors=True, onerror=del_rw)
@@ -244,26 +255,39 @@ def get_mod_folders():
         modFolders.extend(dirnames)
         return modFolders
 
+IGNORE_INCLUDE_FILES = include_patterns('*.lua', '*.luac',
+'*.bin', '*.col', '*.c', '*.h',
+'*.bhv',
+'*.mp3', '*.ogg', '*.m64', '*.aiff',
+'*.lvl',
+'*.png', '*.tex')
+
+IGNORE_INCLUDE_FILES_COMP_ONLY = include_patterns('*.lua', '*.luac',
+'*.bin', '*.col',
+'*.bhv',
+'*.mp3', '*.ogg', '*.m64', '*.aiff',
+'*.lvl',
+'*.tex')
+
 def load_mod_folders():
     if not os.path.isdir(APPDATA_DIR):
         return
     print("Loading mods...")
-    print("Ensuring " + NAME_MANAGER + "'s Mods are moveable...")
-    # unhide_tree(APPDATA_DIR + "/mods")
-    unhide_tree(MANAGED_MODS_DIR)
     backup_mods(True)
     mods = get_mod_folders()
+    if saveData["skipUncompiled"]:
+        print("Uncompiled Files will be skipped when moving!")
     for s in saveData:
         for f in mods:
             if s == ("mods-" + f) and saveData[s] == True:
+                print("Ensuring " + f + "'s Mods are moveable...")
+                unhide_tree(MANAGED_MODS_DIR + "/" + f)
                 print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
+                ignoreInput = IGNORE_INCLUDE_FILES
+                if saveData["skipUncompiled"]:
+                    ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
                 shutil.copytree(MANAGED_MODS_DIR + "/" + f, APPDATA_DIR + "/mods",
-                    ignore=include_patterns('*.lua', '*.luac',
-                                            '*.bin', '*.col', '*.c', '*.h',
-                                            '*.bhv',
-                                            '*.mp3', '*.ogg', '*.m64', '*.aiff',
-                                            '*.lvl',
-                                            '*.png', '*.tex'), dirs_exist_ok=True)
+                    ignore=ignoreInput, dirs_exist_ok=True)
                 break
     notify()
 
@@ -460,6 +484,8 @@ def menu_manager_toggle_chime():
     toggle_save_field("loadChime")
 def menu_manager_toggle_dirs():
     toggle_save_field("showDirs")
+def menu_manager_toggle_uncomp_files():
+    toggle_save_field("skipUncompiled")
 
 def menu_manager_info():
     clear_with_header()
@@ -522,6 +548,7 @@ def menu_main_manager_options():
         menu_option_add("Auto-Backup (" + str(saveData["autoBackup"]) + ")", menu_manager_toggle_backup)
         menu_option_add("Load Chime (" + str(saveData["loadChime"]) + ")", menu_manager_toggle_chime)
         menu_option_add("Streamer Mode (" + str(not saveData["showDirs"]) + ")", menu_manager_toggle_dirs)
+        menu_option_add("Skip Uncompiled Files (" + str(saveData["skipUncompiled"]) + ")", menu_manager_toggle_uncomp_files)
         sub_header(NAME_MANAGER_HELP)
         menu_option_add("Info", menu_manager_info)
         menu_option_add("Support Links", menu_manager_links)
