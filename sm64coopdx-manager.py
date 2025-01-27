@@ -38,7 +38,7 @@ NAME_MODS_MENU = "Mod Options"
 NAME_MANAGER_CONFIG = "Manager Config"
 NAME_MANAGER_HELP = "Manager Help"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
-VERSION = "1"
+VERSION = "1.1"
 DATE = datetime.now().strftime("%m/%d/%Y")
 PLATFORM_WINDOWS = "Windows"
 PLATFORM_LINUX = "Linux"
@@ -124,7 +124,7 @@ def clear_with_header():
     print(headerBreak)
     print(header)
     if updateString != None and updateString != "v" + VERSION:
-        print("Update Avalible! v" + VERSION + " -> " + updateString)
+        print(" Update Avalible! v" + VERSION + " -> " + updateString)
     print(headerBreak)
     print()
 
@@ -188,7 +188,7 @@ def unhide_tree(inputDir):
                 os.chmod(path, stat.S_IRWXU)
 
 def folder_from_file_dir(filename):
-    filename = filename.replace("\\", "/")
+    filename = str(filename).replace("\\", "/")
     splitDir = filename.split("/")
     dirCount = 0
     returnString = ""
