@@ -71,9 +71,6 @@ def get_appdata_dir():
     else:
         return generalAppdata + "sm64coopdx"
 APPDATA_DIR = get_appdata_dir()
-MANAGED_MODS_DIR = APPDATA_DIR + "/managed-mods"
-if not os.path.isdir(MANAGED_MODS_DIR):
-   os.makedirs(MANAGED_MODS_DIR)
 
 # Install External Libs
 import importlib.util
@@ -151,6 +148,7 @@ def read_or_new_pickle(path, default):
 # Save Data Handler
 saveData = {
     "coopDir": (USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
+    "managedDir": (APPDATA_DIR + '/managed-mods'),
     "autoBackup": True,
     "loadChime": True,
     "showDirs": True,
@@ -165,6 +163,9 @@ def save_field(field, value):
     with open(SAVE_DIR, "wb") as f:
         pickle.dump(saveData, f)
     return value
+
+if not os.path.isdir(saveData["managedDir"]):
+   os.makedirs(saveData["managedDir"])
 
 def notify():
     if saveData["loadChime"]:
@@ -218,9 +219,9 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
         unhide_tree(dir)
         print("Ensuring Backups Folder is writeable...")
-        unhide_tree(MANAGED_MODS_DIR + "/backup")
+        unhide_tree(saveData["managedDir"] + "/backup")
         print("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
-        shutil.copytree(dir, MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True, copy_function=shutil.copy)
+        shutil.copytree(dir, saveData["managedDir"] + "/backup", dirs_exist_ok=True, copy_function=shutil.copy)
         if wipeModFolder:
             print("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
             shutil.rmtree(dir, ignore_errors=True, onerror=del_rw)
@@ -230,11 +231,11 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         print("Ensuring " + NAME_SM64COOPDX + "'s Install Mods are moveable...")
         unhide_tree(dir)
         print("Cleaning " + NAME_MANAGER + "'s Default Folder...")
-        shutil.rmtree(MANAGED_MODS_DIR + "/default", ignore_errors=True)
+        shutil.rmtree(saveData["managedDir"] + "/default", ignore_errors=True)
         print("Backing up " + NAME_SM64COOPDX + "'s Install Mods Folder...")
-        shutil.copytree(dir, MANAGED_MODS_DIR + "/backup", dirs_exist_ok=True)
+        shutil.copytree(dir, saveData["managedDir"] + "/backup", dirs_exist_ok=True)
         print("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
-        shutil.move(dir, MANAGED_MODS_DIR + "/default")
+        shutil.move(dir, saveData["managedDir"] + "/default")
 
 # Backup on Bootup
 clear_with_header()
@@ -243,15 +244,15 @@ backup_mods(False)
 def include_patterns(*patterns):
     def _ignore_patterns(path, names):
         keep = set(name for pattern in patterns
-                            for name in fnmatch.filter(names, pattern))
+            for name in fnmatch.filter(names, pattern))
         ignore = set(name for name in names
-                        if name not in keep and not os.path.isdir(os.path.join(path, name)))
+            if name not in keep and not os.path.isdir(os.path.join(path, name)))
         return ignore
     return _ignore_patterns
 
 def get_mod_folders():
     modFolders = []
-    for (dirpath, dirnames, filenames) in os.walk(MANAGED_MODS_DIR):
+    for (dirpath, dirnames, filenames) in os.walk(saveData["managedDir"]):
         modFolders.extend(dirnames)
         return modFolders
 
@@ -281,12 +282,12 @@ def load_mod_folders():
         for f in mods:
             if s == ("mods-" + f) and saveData[s] == True:
                 print("Ensuring " + f + "'s Mods are moveable...")
-                unhide_tree(MANAGED_MODS_DIR + "/" + f)
+                unhide_tree(saveData["managedDir"] + "/" + f)
                 print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
                 ignoreInput = IGNORE_INCLUDE_FILES
                 if saveData["skipUncompiled"]:
                     ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
-                shutil.copytree(MANAGED_MODS_DIR + "/" + f, APPDATA_DIR + "/mods",
+                shutil.copytree(saveData["managedDir"] + "/" + f, APPDATA_DIR + "/mods",
                     ignore=ignoreInput, dirs_exist_ok=True)
                 break
     notify()
@@ -326,6 +327,23 @@ def config_coop_dir():
         inputDir = input("> ")
         if os.path.isfile(inputDir):
             saveData["coopDir"] = save_field("coopDir", inputDir)
+            return True
+        elif inputDir == "back":
+            return False
+        else:
+            print("Directory not found, please enter a valid directory")
+
+def config_managed_dir():
+    clear_with_header()
+    print("Please enter a new Path to use for your Managed Mods")
+    if not saveData["showDirs"]:
+        print("Anything typed below is not censored! Configure with caution!")
+    print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
+    while(True):
+        inputDir = input("> ")
+        if os.path.isdir(inputDir):
+            shutil.move(saveData["managedDir"], inputDir)
+            saveData["managedDir"] = save_field("managedDir", inputDir)
             return True
         elif inputDir == "back":
             return False
@@ -395,7 +413,7 @@ def menu_mod_folder_config():
         if len(mods) < 1:
             print(NAME_MANAGER + "'s Managed Mods Folder is empty!")
             if saveData["showDirs"]:
-                print("Your Managed Mods can be found at: '" + MANAGED_MODS_DIR + "'")
+                print("Your Managed Mods can be found at: '" + saveData["managedDir"] + "'")
             input("Press Enter to return to " + NAME_MODS_MENU)
             break
         sub_header(NAME_FOLDER_OPTIONS)
@@ -415,7 +433,7 @@ def menu_mod_folder_config():
         print()
         print("Mods can be sorted in your 'managed-mods' Folder")
         if saveData["showDirs"]:
-            print("(" + MANAGED_MODS_DIR + ")")
+            print("(" + saveData["managedDir"] + ")")
         print()
         print("Type a Folder's Name / Number to Toggle it")
         print("Type 'all' or 'none' to Enable or Disable all Folders")
@@ -453,7 +471,7 @@ def menu_mod_backup_clear():
     backup_mods(True, True)
 
 def menu_mod_open_managed_folder():
-    open_folder(MANAGED_MODS_DIR)
+    open_folder(saveData["managedDir"])
 
 def menu_main_mod_options():
     while(True):
@@ -544,7 +562,8 @@ def menu_main_manager_options():
         clear_with_header()
         sub_header(NAME_MANAGER_CONFIG)
         menu_clear()
-        menu_option_add("Configure Directory", config_coop_dir)
+        menu_option_add("Configure " + NAME_SM64COOPDX + " Executible Path", config_coop_dir)
+        menu_option_add("Configure Managed Mods Directory", config_managed_dir)
         menu_option_add("Auto-Backup (" + str(saveData["autoBackup"]) + ")", menu_manager_toggle_backup)
         menu_option_add("Load Chime (" + str(saveData["loadChime"]) + ")", menu_manager_toggle_chime)
         menu_option_add("Streamer Mode (" + str(not saveData["showDirs"]) + ")", menu_manager_toggle_dirs)
