@@ -338,20 +338,24 @@ def config_coop_dir():
 
 def config_managed_dir():
     clear_with_header()
-    print("Please enter a new Path to use for your Managed Mods")
+    print("Please enter a new Directory to put your Managed Mods Folder")
     if not saveData["showDirs"]:
         print("Anything typed below is not censored! Configure with caution!")
     else:
-        print("Your current managed mods directory is in '" + folder_from_file_dir(saveData["managedDir"]) + "'")
+        print("Your current Managed Mods directory is in '" + folder_from_file_dir(saveData["managedDir"]) + "'")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
         inputDir = input("> ")
         if os.path.isdir(inputDir):
+            prevManagedDir = saveData["managedDir"]
+            saveData["managedDir"] = save_field("managedDir", inputDir + '/managed-mods')
             try:
-                shutil.move(saveData["managedDir"], inputDir)
+                shutil.move(prevManagedDir, saveData["managedDir"])
             except:
                 print("Hit error while attempting to move Mods to Inputted Directory")
-            saveData["managedDir"] = save_field("managedDir", inputDir + '/managed-mods')
+                print("Please check both your previous and new directory for unmoved files!")
+                input("Press Enter to Continue")
+
             return False
         elif inputDir == "back":
             return False
