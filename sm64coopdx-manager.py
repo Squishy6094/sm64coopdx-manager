@@ -36,6 +36,7 @@ NAME_MANAGER = NAME_SM64COOPDX + " Manager"
 NAME_MAIN_MENU = "Main Options"
 NAME_MODS_MENU = "Mod Options"
 NAME_MANAGER_CONFIG = "Manager Config"
+NAME_MANAGER_SETTINGS = "Manager Settings"
 NAME_MANAGER_HELP = "Manager Help"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
 VERSION = "1.1"
@@ -322,6 +323,8 @@ def config_coop_dir():
     print("Please enter a new Path to use for " + NAME_SM64COOPDX)
     if not saveData["showDirs"]:
         print("Anything typed below is not censored! Configure with caution!")
+    else:
+        print("Your current managed mods directory is '" + folder_from_file_dir(saveData["coopDir"]) + "'")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
         inputDir = input("> ")
@@ -338,13 +341,18 @@ def config_managed_dir():
     print("Please enter a new Path to use for your Managed Mods")
     if not saveData["showDirs"]:
         print("Anything typed below is not censored! Configure with caution!")
+    else:
+        print("Your current managed mods directory is in '" + folder_from_file_dir(saveData["managedDir"]) + "'")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
         inputDir = input("> ")
         if os.path.isdir(inputDir):
-            shutil.move(saveData["managedDir"], inputDir)
-            saveData["managedDir"] = save_field("managedDir", inputDir)
-            return True
+            try:
+                shutil.move(saveData["managedDir"], inputDir)
+            except:
+                print("Hit error while attempting to move Mods to Inputted Directory")
+            saveData["managedDir"] = save_field("managedDir", inputDir + '/managed-mods')
+            return False
         elif inputDir == "back":
             return False
         else:
@@ -522,11 +530,11 @@ def menu_manager_info():
     # Appdata Exists
     if os.path.isdir(APPDATA_DIR):
         if saveData["showDirs"]:
-            print("Appdata Directory: '" + APPDATA_DIR + "'")
+            print("Managed Mods Directory: '" + saveData["managedDir"] + "'")
         else:
-            print("Appdata Directory Valid")
+            print("Managed Mods Directory Valid")
     else:
-        print("Appdata Directory Invalid")
+        print("Managed Mods Directory Invalid")
     # Other Save Data
     print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
     print("Load Chime: " + str(saveData["loadChime"]))
@@ -564,6 +572,7 @@ def menu_main_manager_options():
         menu_clear()
         menu_option_add("Configure " + NAME_SM64COOPDX + " Executible Path", config_coop_dir)
         menu_option_add("Configure Managed Mods Directory", config_managed_dir)
+        sub_header(NAME_MANAGER_SETTINGS)
         menu_option_add("Auto-Backup (" + str(saveData["autoBackup"]) + ")", menu_manager_toggle_backup)
         menu_option_add("Load Chime (" + str(saveData["loadChime"]) + ")", menu_manager_toggle_chime)
         menu_option_add("Streamer Mode (" + str(not saveData["showDirs"]) + ")", menu_manager_toggle_dirs)
