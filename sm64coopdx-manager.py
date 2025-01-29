@@ -12,9 +12,24 @@ from datetime import datetime
 import platform
 import fnmatch
 
+PLATFORM_WINDOWS = "Windows"
+PLATFORM_LINUX = "Linux"
+def platform_is_windows():
+    systemName = platform.system()
+    # Get Platform's Appdata Folder
+    if systemName == PLATFORM_WINDOWS:
+        return True
+    elif systemName == PLATFORM_LINUX:
+        return False
+    else:
+        print("SM64CoopDX Manager is not supported on your Operating System")
+        input("Press Enter to Close Program")
+        exit()
+
+
 # Clear Console
 def clear():
-    if os.name == 'nt': # Windows
+    if platform_is_windows(): # Windows
         _ = os.system('cls')
     else: # Linux
         _ = os.system('clear')
@@ -41,30 +56,48 @@ NAME_MANAGER_HELP = "Manager Help"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
 VERSION = "1.1"
 DATE = datetime.now().strftime("%m/%d/%Y")
-PLATFORM_WINDOWS = "Windows"
-PLATFORM_LINUX = "Linux"
 
 clear()
 print("Booting " + NAME_MANAGER + "...")
 
+def return_consistent_dir(dir):
+    if platform_is_windows():
+        dir = str(dir).replace("/", "\\")
+    else:
+        dir = str(dir).replace("\\", "/")
+    return dir
+
+def split_consistent_dir(dir):
+    dir = return_consistent_dir(dir)
+    if platform_is_windows():
+        dir = str(dir).split("\\")
+    else:
+        dir = str(dir).split("/")
+    return dir
+    
+def folder_from_file_dir(filename):
+    splitDir = split_consistent_dir(filename)
+    dirCount = 0
+    returnString = ""
+    for x in splitDir:
+        dirCount = dirCount + 1
+        if dirCount < len(splitDir):
+            returnString = returnString + x + "/"
+    return returnString
+
 # Define Constant Paths
-USER_DIR = str(Path.home()).replace("\\", "/")
+USER_DIR = return_consistent_dir(Path.home())
 os.chdir(USER_DIR)
-SAVE_DIR = "sm64coopdx-manager.pickle"
+FILE_DIR = return_consistent_dir(os.path.realpath(__file__))
+SAVE_DIR = return_consistent_dir((folder_from_file_dir(FILE_DIR) + "sm64coopdx-manager.pickle"))
 def get_appdata_dir():
-    systemName = platform.system()
     generalAppdata = ""
 
     # Get Platform's Appdata Folder
-    if systemName == PLATFORM_WINDOWS:
+    if platform_is_windows():
         generalAppdata = USER_DIR + "/AppData/Roaming/"
-    elif systemName == PLATFORM_LINUX:
-        generalAppdata = USER_DIR + "/.local/share/"
     else:
-        clear()
-        print(NAME_MANAGER + " is not supported on your Operating System")
-        input("Press Enter to Close Program")
-        exit()
+        generalAppdata = USER_DIR + "/.local/share/"
 
     # Get Appdata folder for Coop
     if os.path.isdir(generalAppdata + "sm64ex-coop"):
@@ -148,8 +181,8 @@ def read_or_new_pickle(path, default):
 
 # Save Data Handler
 saveData = {
-    "coopDir": (USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
-    "managedDir": (APPDATA_DIR + '/managed-mods'),
+    "coopDir": return_consistent_dir(USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
+    "managedDir": return_consistent_dir(APPDATA_DIR + '/managed-mods'),
     "autoBackup": True,
     "loadChime": True,
     "showDirs": True,
@@ -189,23 +222,12 @@ def unhide_tree(inputDir):
             if file_unpermitted(path):
                 os.chmod(path, stat.S_IRWXU)
 
-def folder_from_file_dir(filename):
-    filename = str(filename).replace("\\", "/")
-    splitDir = filename.split("/")
-    dirCount = 0
-    returnString = ""
-    for x in splitDir:
-        dirCount = dirCount + 1
-        if dirCount < len(splitDir):
-            returnString = returnString + x + "/"
-    return returnString
-
 def del_rw(action, name, exc):
     os.chmod(name, stat.S_IWRITE)
     os.remove(name)
 
 def backup_mods(wipeModFolder=False, forceBackup=False):
-    dir = APPDATA_DIR + "/mods"
+    dir = return_consistent_dir(APPDATA_DIR + "/mods")
     if not saveData["autoBackup"]:
         if not forceBackup:
             print("Skipping Auto-Backup...")
@@ -312,7 +334,7 @@ def boot_coop():
     sub_header("Standard Boot")
     load_mod_folders()
     if saveData["showDirs"]:
-        print("Booting " + NAME_SM64COOPDX + " from Directory: '" + coopDirectory + "'")
+        print("Booting " + NAME_SM64COOPDX + " from Path: '" + coopDirectory + "'")
     else:
         print("Booting " + NAME_SM64COOPDX)
     open_file(coopDirectory)
@@ -327,14 +349,14 @@ def config_coop_dir():
         print("Your current managed mods directory is '" + folder_from_file_dir(saveData["coopDir"]) + "'")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
-        inputDir = input("> ")
+        inputDir = return_consistent_dir(input("> "))
         if os.path.isfile(inputDir):
             saveData["coopDir"] = save_field("coopDir", inputDir)
             return True
         elif inputDir == "back":
             return False
         else:
-            print("Directory not found, please enter a valid directory")
+            print("Executible not found, please enter a valid directory")
 
 def config_managed_dir():
     clear_with_header()
@@ -345,7 +367,7 @@ def config_managed_dir():
         print("Your current Managed Mods directory is in '" + folder_from_file_dir(saveData["managedDir"]) + "'")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
-        inputDir = input("> ")
+        inputDir = return_consistent_dir(input("> "))
         if os.path.isdir(inputDir):
             prevManagedDir = saveData["managedDir"]
             saveData["managedDir"] = save_field("managedDir", inputDir + '/managed-mods')
