@@ -187,7 +187,7 @@ saveData = {
     "loadChime": True,
     "showDirs": True,
     "skipUncompiled": False,
-    "mods-backup": False,
+    "mods-.backup": False,
 }
 saveDataPickle = read_or_new_pickle(SAVE_DIR, saveData)
 for s in saveDataPickle:
@@ -242,9 +242,9 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
         unhide_tree(dir)
         print("Ensuring Backups Folder is writeable...")
-        unhide_tree(saveData["managedDir"] + "/backup")
+        unhide_tree(saveData["managedDir"] + "/.backup")
         print("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
-        shutil.copytree(dir, saveData["managedDir"] + "/backup", dirs_exist_ok=True, copy_function=shutil.copy)
+        shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=shutil.copy)
         if wipeModFolder:
             print("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
             shutil.rmtree(dir, ignore_errors=True, onerror=del_rw)
@@ -256,7 +256,7 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         print("Cleaning " + NAME_MANAGER + "'s Default Folder...")
         shutil.rmtree(saveData["managedDir"] + "/default", ignore_errors=True)
         print("Backing up " + NAME_SM64COOPDX + "'s Install Mods Folder...")
-        shutil.copytree(dir, saveData["managedDir"] + "/backup", dirs_exist_ok=True)
+        shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True)
         print("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
         shutil.move(dir, saveData["managedDir"] + "/default")
 
@@ -276,7 +276,8 @@ def include_patterns(*patterns):
 def get_mod_folders():
     modFolders = []
     for (dirpath, dirnames, filenames) in os.walk(saveData["managedDir"]):
-        modFolders.extend(dirnames)
+        if dirnames[0:1] != ".":
+            modFolders.extend(dirnames)
         return modFolders
 
 IGNORE_INCLUDE_FILES = include_patterns('*.lua', '*.luac',
@@ -477,7 +478,7 @@ def menu_mod_folder_config():
         if prompt3 == "all":
             for x in mods:
                 save_field("mods-" + x, True)
-            save_field("mods-backup", False)
+            save_field("mods-.backup", False)
         if prompt3 == "none":
             for x in mods:
                 save_field("mods-" + x, False)
@@ -518,8 +519,8 @@ def menu_main_mod_options():
             sub_header(NAME_MODS_MENU)
             menu_clear()
             menu_option_add("Config Managed Mods", menu_mod_folder_config)
-            menu_option_add("Backup and Clear", menu_mod_backup_clear)
             menu_option_add("Open Managed Mods Folder", menu_mod_open_managed_folder)
+            menu_option_add("Backup and Clear Mods Folder", menu_mod_backup_clear)
             sub_header()
             menu_option_add("Back", menu_back)
             if menu_input():
