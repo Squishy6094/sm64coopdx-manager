@@ -189,9 +189,7 @@ saveData = {
     "skipUncompiled": False,
     "mods-.backup": False,
 }
-saveDataPickle = read_or_new_pickle(SAVE_DIR, saveData)
-for s in saveDataPickle:
-    saveData[s] = saveDataPickle[s]
+saveData = read_or_new_pickle(SAVE_DIR, saveData)
 def save_field(field, value):
     saveData[field] = value
     with open(SAVE_DIR, "wb") as f:
@@ -319,14 +317,14 @@ def load_mod_folders():
     notify()
 
 def open_file(filename):
-    if sys.platform == "win32":
+    if platform_is_windows():
         os.startfile(filename)
     else:
         subprocess.call(filename, cwd=folder_from_file_dir(filename))
 
         
 def open_folder(foldername):
-    if sys.platform == "win32":
+    if platform_is_windows():
         os.startfile(foldername)
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
@@ -343,13 +341,19 @@ def boot_coop():
     open_file(coopDirectory)
 
 
-def config_coop_dir():
+def config_coop_dir(notFound=False):
     clear_with_header()
+    if notFound:
+        if not saveData["showDirs"]:
+            print(NAME_SM64COOPDX + " not found at expected Path!")
+        else:
+            print(NAME_SM64COOPDX + " not found at Path '" + saveData["coopDir"] + "'")
+    else:
+        if saveData["showDirs"]:
+            print("Your current " + NAME_SM64COOPDX + " path is '" + saveData["coopDir"] + "'")
     print("Please enter a new Path to use for " + NAME_SM64COOPDX)
     if not saveData["showDirs"]:
         print("Anything typed below is not censored! Configure with caution!")
-    else:
-        print("Your current managed mods directory is '" + folder_from_file_dir(saveData["coopDir"]) + "'")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
         inputDir = return_consistent_dir(input("> "))
@@ -431,10 +435,7 @@ def menu_main_open_coop():
             boot_coop()
             break
         else:
-            print(NAME_SM64COOPDX + " not found at Directory '" + saveData["coopDir"] + "'")
-            config = config_coop_dir()
-            if config == True:
-                saveData["coopDir"] = save_field("coopDir", config)
+            if config_coop_dir(True) == True:
                 clear_with_header()
                 boot_coop()
                 break
