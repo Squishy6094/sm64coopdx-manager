@@ -280,10 +280,6 @@ def get_mod_folders():
         for x in dirnames:
             if x[0:1] == ".":
                 modFolders.remove(x)
-            print(x)
-            print(x[0:1])
-            print(x[0:1] != ".")
-        input()
         return modFolders
 
 IGNORE_INCLUDE_FILES = include_patterns('*.lua', '*.luac',
