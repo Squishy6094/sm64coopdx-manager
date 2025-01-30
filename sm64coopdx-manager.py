@@ -89,7 +89,7 @@ def folder_from_file_dir(filename):
 USER_DIR = return_consistent_dir(Path.home())
 os.chdir(USER_DIR)
 FILE_DIR = return_consistent_dir(os.path.realpath(__file__))
-SAVE_DIR = return_consistent_dir((folder_from_file_dir(FILE_DIR) + "sm64coopdx-manager.pickle"))
+SAVE_DIR = return_consistent_dir((folder_from_file_dir(FILE_DIR) + "coop-manager-" + VERSION + ".pickle"))
 def get_appdata_dir():
     generalAppdata = ""
 
@@ -276,8 +276,14 @@ def include_patterns(*patterns):
 def get_mod_folders():
     modFolders = []
     for (dirpath, dirnames, filenames) in os.walk(saveData["managedDir"]):
-        if dirnames[0:1] != ".":
-            modFolders.extend(dirnames)
+        modFolders.extend(dirnames)
+        for x in dirnames:
+            if x[0:1] == ".":
+                modFolders.remove(x)
+            print(x)
+            print(x[0:1])
+            print(x[0:1] != ".")
+        input()
         return modFolders
 
 IGNORE_INCLUDE_FILES = include_patterns('*.lua', '*.luac',
