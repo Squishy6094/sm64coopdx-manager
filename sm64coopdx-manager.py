@@ -106,38 +106,36 @@ def get_appdata_dir():
         return generalAppdata + "sm64coopdx"
 APPDATA_DIR = get_appdata_dir()
 
-# Install External Libs
+# Check External Libs
 import importlib.util
 installedModuleList = []
+mustInstallModuleList = []
 queueRestart = False
 def check_module(package):
     packageSpec = importlib.util.find_spec(package)
     if packageSpec == None:
         clear()
-        print("Installing Dependancy '" + package + "'")
-        try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        except:
-            print("Could not install Dependancy '" + package + "'")
-            print("Please install this Dependancy via '-m pip install " + package + "' in your Terminal")
-            input("Press Enter to Restart Program")
-            os.execv(sys.executable, ['python'] + sys.argv)
+        mustInstallModuleList.append(package)
         return True
     else:
         installedModuleList.append(package)
-        return queueRestart
 
-queueRestart = check_module('requests')
-queueRestart = check_module('chime')
+check_module('requests')
+check_module('chime')
+check_module('watchdog')
 
-if queueRestart:
+if len(mustInstallModuleList) > 0:
     clear()
-    print(NAME_MANAGER + " requires a Restart in order to use Installed Python Libraries")
-    input("Press Enter to Restart Program")
-    os.execv(sys.executable, ['python'] + sys.argv)
+    print(NAME_MANAGER + " requires the following libraries to be installed before use:")
+    print()
+    for x in mustInstallModuleList:
+        print("-m pip install " + x)
+    input("Press Enter to Exit Program")
+    exit()
     
 import requests
 import chime
+import watchdog
 
 def github_version_check():
     try:
@@ -511,6 +509,23 @@ def menu_mod_backup_clear():
 def menu_mod_open_managed_folder():
     open_folder(saveData["managedDir"])
 
+def watchdog_mode():
+    clear_with_header()
+    print(NAME_MANAGER + " will now in Development Mode")
+    print()
+    print("The program will idle and look for changes in your active Managed Mod Folders,")
+    print("Once a change is detected it will automatically push the Managed Mods to " + NAME_SM64COOPDX + "'s Mods Folder")
+    print("The program cannot exit out of this mode via prompts once started")
+    print()
+    print("Press ENTER to continute, or 'back' to exit")
+    confirm = input("> ")
+    if confirm.lower() == "back":
+        return False
+    else:
+        while(True):
+            print("FUCK YOUU!!!")
+
+
 def menu_main_mod_options():
     while(True):
         clear_with_header()
@@ -524,6 +539,7 @@ def menu_main_mod_options():
             menu_option_add("Config Managed Mods", menu_mod_folder_config)
             menu_option_add("Open Managed Mods Folder", menu_mod_open_managed_folder)
             menu_option_add("Backup and Clear Mods Folder", menu_mod_backup_clear)
+            menu_option_add("Development Mode", watchdog_mode)
             sub_header()
             menu_option_add("Back", menu_back)
             if menu_input():
