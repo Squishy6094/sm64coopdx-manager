@@ -126,10 +126,17 @@ check_module('watchdog')
 
 if len(mustInstallModuleList) > 0:
     clear()
-    print(NAME_MANAGER + " requires the following libraries to be installed before use:")
-    print()
+    print(NAME_MANAGER + " requires the following python libraries to be installed before use:")
     for x in mustInstallModuleList:
-        print("-m pip install " + x)
+        print("- " + x.capitalize())
+    print()
+    print("The following command can be used if you have 'pip' Installed")
+    installCommand = "'pip install"
+    for x in mustInstallModuleList:
+        installCommand = installCommand + " " + x
+    installCommand = installCommand + "'"
+    print(installCommand)
+    print()
     input("Press Enter to Exit Program")
     exit()
     
@@ -197,10 +204,16 @@ def save_field(field, value):
 if not os.path.isdir(saveData["managedDir"]):
    os.makedirs(saveData["managedDir"])
 
-def notify():
+NOTIF_1UP = 0
+NOTIF_COIN = 1
+def notify(sound=NOTIF_1UP):
     if saveData["loadChime"]:
-        chime.theme('mario')
-        chime.success(sync=True)
+        if sound == NOTIF_1UP:
+            chime.theme('mario')
+            chime.success(sync=True)
+        if sound == NOTIF_COIN:
+            chime.theme('mario')
+            chime.info(sync=True)
 
 # File Management
 def file_unpermitted(filepath):
@@ -278,6 +291,16 @@ def get_mod_folders():
                 modFolders.remove(x)
         return modFolders
 
+def get_enabled_mod_folders():
+    modFolders = get_mod_folders()
+    enabledModFolders = []
+    for s in saveData:
+        for f in modFolders:
+            if s == ("mods-" + f) and saveData[s] == True:
+                enabledModFolders.append(f)
+    return enabledModFolders
+
+
 IGNORE_INCLUDE_FILES = include_patterns('*.lua', '*.luac',
 '*.bin', '*.col', '*.c', '*.h',
 '*.bhv',
@@ -297,21 +320,19 @@ def load_mod_folders():
         return
     print("Loading mods...")
     backup_mods(True)
-    mods = get_mod_folders()
+    mods = get_enabled_mod_folders()
     if saveData["skipUncompiled"]:
         print("Uncompiled Files will be skipped when moving!")
-    for s in saveData:
-        for f in mods:
-            if s == ("mods-" + f) and saveData[s] == True:
-                print("Ensuring " + f + "'s Mods are moveable...")
-                unhide_tree(saveData["managedDir"] + "/" + f)
-                print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
-                ignoreInput = IGNORE_INCLUDE_FILES
-                if saveData["skipUncompiled"]:
-                    ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
-                shutil.copytree(saveData["managedDir"] + "/" + f, APPDATA_DIR + "/mods",
-                    ignore=ignoreInput, dirs_exist_ok=True)
-                break
+    for f in mods:
+            print("Ensuring " + f + "'s Mods are moveable...")
+            unhide_tree(saveData["managedDir"] + "/" + f)
+            print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
+            ignoreInput = IGNORE_INCLUDE_FILES
+            if saveData["skipUncompiled"]:
+                ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
+            shutil.copytree(saveData["managedDir"] + "/" + f, APPDATA_DIR + "/mods",
+                ignore=ignoreInput, dirs_exist_ok=True)
+            break
     notify()
 
 def open_file(filename):
@@ -509,21 +530,54 @@ def menu_mod_backup_clear():
 def menu_mod_open_managed_folder():
     open_folder(saveData["managedDir"])
 
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
+from watchdog.observers import Observer
+
+class watchdogHandler(FileSystemEventHandler):
+    def on_any_event(self, event: FileSystemEvent) -> None:
+        print()
+        
+        if str(event.src_path).endswith("~"):
+            return None
+        
+        if saveData["showDirs"]:
+            print("Change detected at " + event.src_path)
+        else:
+            print("Change detected!")
+        load_mod_folders()
+
 def watchdog_mode():
     clear_with_header()
-    print(NAME_MANAGER + " will now in Development Mode")
+    print(NAME_MANAGER + " will now enter Development Mode")
     print()
     print("The program will idle and look for changes in your active Managed Mod Folders,")
     print("Once a change is detected it will automatically push the Managed Mods to " + NAME_SM64COOPDX + "'s Mods Folder")
     print("The program cannot exit out of this mode via prompts once started")
+    if saveData["autoBackup"] or not saveData["skipUncompiled"]:
+        print()
+        print("Note: It is highly recommended you turn off the following settings in Manager Options")
+        if saveData["autoBackup"]:
+            print("Auto-Backup")
+        if not saveData["skipUncompiled"]:
+            print("Skip Uncompiled Files")
     print()
-    print("Press ENTER to continute, or 'back' to exit")
+    print("Press ENTER to continute, or type 'back' to exit")
     confirm = input("> ")
     if confirm.lower() == "back":
         return False
     else:
-        while(True):
-            print("FUCK YOUU!!!")
+        notify(NOTIF_COIN)
+        clear()
+        modFolders = get_enabled_mod_folders()
+        observer = Observer()
+        print("Setting up Observer")
+        for x in modFolders:
+            print("Scheduling Mod Folder " + x)
+            observer.schedule(watchdogHandler(), return_consistent_dir(saveData["managedDir"] + "/" + x), recursive=True)
+        observer.start()
+        print("Observer Started")
+        while True:
+            time.sleep(1)
 
 
 def menu_main_mod_options():
