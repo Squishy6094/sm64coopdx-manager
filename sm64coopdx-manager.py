@@ -114,32 +114,31 @@ queueRestart = False
 def check_module(package):
     packageSpec = importlib.util.find_spec(package)
     if packageSpec == None:
-        clear()
         mustInstallModuleList.append(package)
-        return True
     else:
         installedModuleList.append(package)
 
+def check_missing_module_and_stop():
+    if len(mustInstallModuleList) > 0:
+        clear()
+        print(NAME_MANAGER + " requires the following python libraries to be installed before use:")
+        for x in mustInstallModuleList:
+            print("- " + x.capitalize())
+        print()
+        print("The following command can be used if you have 'pip' Installed")
+        installCommand = "'pip install"
+        for x in mustInstallModuleList:
+            installCommand = installCommand + " " + x
+        installCommand = installCommand + "'"
+        print(installCommand)
+        print()
+        input("Press Enter to Exit Program")
+        exit()
+    
 check_module('requests')
 check_module('chime')
 check_module('watchdog')
-
-if len(mustInstallModuleList) > 0:
-    clear()
-    print(NAME_MANAGER + " requires the following python libraries to be installed before use:")
-    for x in mustInstallModuleList:
-        print("- " + x.capitalize())
-    print()
-    print("The following command can be used if you have 'pip' Installed")
-    installCommand = "'pip install"
-    for x in mustInstallModuleList:
-        installCommand = installCommand + " " + x
-    installCommand = installCommand + "'"
-    print(installCommand)
-    print()
-    input("Press Enter to Exit Program")
-    exit()
-    
+check_missing_module_and_stop()
 import requests
 import chime
 import watchdog
@@ -320,19 +319,18 @@ def load_mod_folders():
         return
     print("Loading mods...")
     backup_mods(True)
-    mods = get_enabled_mod_folders()
+    enabledMods = get_enabled_mod_folders()
     if saveData["skipUncompiled"]:
         print("Uncompiled Files will be skipped when moving!")
-    for f in mods:
-            print("Ensuring " + f + "'s Mods are moveable...")
-            unhide_tree(saveData["managedDir"] + "/" + f)
-            print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
-            ignoreInput = IGNORE_INCLUDE_FILES
-            if saveData["skipUncompiled"]:
-                ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
-            shutil.copytree(saveData["managedDir"] + "/" + f, APPDATA_DIR + "/mods",
-                ignore=ignoreInput, dirs_exist_ok=True)
-            break
+    for f in enabledMods:
+        print("Ensuring " + f + "'s Mods are moveable...")
+        unhide_tree(saveData["managedDir"] + "/" + f)
+        print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
+        ignoreInput = IGNORE_INCLUDE_FILES
+        if saveData["skipUncompiled"]:
+            ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
+        shutil.copytree(saveData["managedDir"] + "/" + f, APPDATA_DIR + "/mods",
+            ignore=ignoreInput, dirs_exist_ok=True)
     notify()
 
 def open_file(filename):
@@ -537,7 +535,8 @@ class watchdogHandler(FileSystemEventHandler):
     def on_any_event(self, event: FileSystemEvent) -> None:
         print()
         
-        if str(event.src_path).endswith("~"):
+        if str(event.src_path).find(".git") != -1 or str(event.src_path).endswith("~"):
+            print("Ignoring " + event.src_path)
             return None
         
         if saveData["showDirs"]:
