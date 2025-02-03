@@ -165,7 +165,8 @@ def clear_with_header():
     print(headerBreak)
     print()
 
-def sub_header(headerText="|", length=27):
+SUB_HEADER_LENGTH_DEFAULT = 29
+def sub_header(headerText="|", length=SUB_HEADER_LENGTH_DEFAULT):
     subheaderText = " " + headerText + " "
     while len(subheaderText) < length:
         subheaderText = "=" + subheaderText + "="
@@ -414,6 +415,27 @@ def config_managed_dir():
 ## Automatic Menu Creation ##
 #############################
 
+def menu_option_name_with_toggle(name="Option", toggle=True, dots=-1):
+    toggleString = ""
+    if isinstance(toggle, bool):
+        if toggle:
+            toggleString = "(O)"
+        else:
+            toggleString = "(X)"
+    else:
+        toggleString = "(" + str(toggle) + ")"
+
+    if dots < 0:
+        dots = SUB_HEADER_LENGTH_DEFAULT - (len(name) + len(str(toggleString)) + 4)
+    if dots < 0:
+        dots = 0
+
+    returnString = ""
+    while len(returnString) < dots:
+        returnString = returnString + "."
+    returnString = name + " " + returnString + " " + toggleString
+    return returnString
+
 menuTable = []
 def menu_clear():
     menuTable.clear()
@@ -491,11 +513,7 @@ def menu_mod_folder_config():
             except:
                 saveData["mods-" + x] = save_field("mods-" + x, True)
                 modOnOff = True
-            spacing = " "
-            while len(spacing) < 25 - (len(x) + 2):
-                spacing = spacing + "."
-            spacing = spacing + " "
-            print(str(modNum) + ". " + x + spacing + ("(O) Enabled" if modOnOff else "(X) Disabled"))
+            print(str(modNum) + ". " + menu_option_name_with_toggle(x, modOnOff))
         print()
         print("Mods can be sorted in your 'managed-mods' Folder")
         if saveData["showDirs"]:
@@ -594,9 +612,9 @@ def menu_mod_config_settings():
         clear_with_header()
         sub_header("Management Settings:")
         menu_clear()
-        menu_option_add("Auto-Backup (" + str(saveData["autoBackup"]) + ")", menu_toggle_backup)
-        menu_option_add("Load Chime (" + str(saveData["loadChime"]) + ")", menu_toggle_chime)
-        menu_option_add("Skip Uncompiled Files (" + str(saveData["skipUncompiled"]) + ")", menu_toggle_uncomp_files)
+        menu_option_add(menu_option_name_with_toggle("Auto-Backup", saveData["autoBackup"]), menu_toggle_backup)
+        menu_option_add(menu_option_name_with_toggle("Load Chime", saveData["loadChime"]), menu_toggle_chime)
+        menu_option_add(menu_option_name_with_toggle("Uncompiled Files", (not saveData["skipUncompiled"])), menu_toggle_uncomp_files)
         
         expectedLoadTime = 0
         if saveData["autoBackup"]:
@@ -700,7 +718,7 @@ def menu_main_manager_options():
         menu_option_add(NAME_SM64COOPDX + " Executible Path", config_coop_dir)
         menu_option_add(NAME_MANAGER_MODS + " Directory", config_managed_dir)
         sub_header(NAME_MANAGER_SETTINGS_AND_HELP)
-        menu_option_add("Streamer Mode " + str(not saveData["showDirs"]), menu_manager_toggle_dirs)
+        menu_option_add(menu_option_name_with_toggle("Streamer Mode", (not saveData["showDirs"])), menu_manager_toggle_dirs)
         menu_option_add("Info", menu_manager_info)
         menu_option_add("Support Links", menu_manager_links)
         sub_header()
