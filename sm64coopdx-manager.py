@@ -48,11 +48,13 @@ sys.excepthook = show_exception_and_exit
 # Define Constants
 NAME_SM64COOPDX = "SM64CoopDX"
 NAME_MANAGER = NAME_SM64COOPDX + " Manager"
+NAME_MANAGER_MODS = "Managed Mods"
 NAME_MAIN_MENU = "Main Options"
 NAME_MODS_MENU = "Mod Options"
-NAME_MANAGER_CONFIG = "Manager Config"
-NAME_MANAGER_SETTINGS = "Manager Settings"
-NAME_MANAGER_HELP = "Manager Help"
+NAME_MANAGER_PATH_CONFIG = "Configure Paths"
+NAME_MANAGER_SETTINGS_AND_HELP = "Settings and Help"
+NAME_MANAGER_SETTINGS = "Settings"
+NAME_MANAGER_HELP = "Help"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
 VERSION = "1.1"
 DATE = datetime.now().strftime("%m/%d/%Y")
@@ -384,11 +386,11 @@ def config_coop_dir(notFound=False):
 
 def config_managed_dir():
     clear_with_header()
-    print("Please enter a new Directory to put your Managed Mods Folder")
+    print("Please enter a new Directory to put your " + NAME_MANAGER_MODS + " Folder")
     if not saveData["showDirs"]:
         print("Anything typed below is not censored! Configure with caution!")
     else:
-        print("Your current Managed Mods directory is in '" + folder_from_file_dir(saveData["managedDir"]) + "'")
+        print("Your current " + NAME_MANAGER_MODS + " directory is in '" + folder_from_file_dir(saveData["managedDir"]) + "'")
     print("(Type 'back' to return to " + NAME_MAIN_MENU + ")")
     while(True):
         inputDir = return_consistent_dir(input("> "))
@@ -445,6 +447,15 @@ def menu_input():
 ## Menu Functions ##
 ####################
 
+def menu_toggle_backup():
+    toggle_save_field("autoBackup")
+def menu_toggle_chime():
+    toggle_save_field("loadChime")
+def menu_manager_toggle_dirs():
+    toggle_save_field("showDirs")
+def menu_toggle_uncomp_files():
+    toggle_save_field("skipUncompiled")
+
 def menu_main_open_coop():
     while(True):
         clear_with_header()
@@ -466,9 +477,9 @@ def menu_mod_folder_config():
         mods = get_mod_folders()
         modNum = 0
         if len(mods) < 1:
-            print(NAME_MANAGER + "'s Managed Mods Folder is empty!")
+            print(NAME_MANAGER + "'s " + NAME_MANAGER_MODS + " Folder is empty!")
             if saveData["showDirs"]:
-                print("Your Managed Mods can be found at: '" + saveData["managedDir"] + "'")
+                print("Your " + NAME_MANAGER_MODS + " can be found at: '" + saveData["managedDir"] + "'")
             input("Press Enter to return to " + NAME_MODS_MENU)
             break
         sub_header(NAME_FOLDER_OPTIONS)
@@ -549,8 +560,8 @@ def watchdog_mode():
     clear_with_header()
     print(NAME_MANAGER + " will now enter Development Mode")
     print()
-    print("The program will idle and look for changes in your active Managed Mod Folders,")
-    print("Once a change is detected it will automatically push the Managed Mods to " + NAME_SM64COOPDX + "'s Mods Folder")
+    print("The program will idle and look for changes in your active " + NAME_MANAGER_MODS + " Folders,")
+    print("Once a change is detected it will automatically push the " + NAME_MANAGER_MODS + " to " + NAME_SM64COOPDX + "'s Mods Folder")
     print("The program cannot exit out of this mode via prompts once started")
     if saveData["autoBackup"] or not saveData["skipUncompiled"]:
         print()
@@ -578,6 +589,31 @@ def watchdog_mode():
         while True:
             time.sleep(1)
 
+def menu_mod_config_settings():
+    while(True):
+        clear_with_header()
+        sub_header("Management Settings:")
+        menu_clear()
+        menu_option_add("Auto-Backup (" + str(saveData["autoBackup"]) + ")", menu_toggle_backup)
+        menu_option_add("Load Chime (" + str(saveData["loadChime"]) + ")", menu_toggle_chime)
+        menu_option_add("Skip Uncompiled Files (" + str(saveData["skipUncompiled"]) + ")", menu_toggle_uncomp_files)
+        
+        expectedLoadTime = 0
+        if saveData["autoBackup"]:
+            expectedLoadTime = expectedLoadTime + 1
+        if not saveData["skipUncompiled"]:
+            expectedLoadTime = expectedLoadTime + 1
+        if expectedLoadTime == 0:
+            expectedLoadTime = "Low"
+        elif expectedLoadTime == 1:
+            expectedLoadTime = "Medium"
+        else:
+            expectedLoadTime = "High"
+        print("Management Time: " + expectedLoadTime)
+        sub_header()
+        menu_option_add("Back", menu_back)
+        if menu_input():
+            break
 
 def menu_main_mod_options():
     while(True):
@@ -589,9 +625,10 @@ def menu_main_mod_options():
         else:
             sub_header(NAME_MODS_MENU)
             menu_clear()
-            menu_option_add("Config Managed Mods", menu_mod_folder_config)
-            menu_option_add("Open Managed Mods Folder", menu_mod_open_managed_folder)
+            menu_option_add("Config " + NAME_MANAGER_MODS, menu_mod_folder_config)
+            menu_option_add("Open " + NAME_MANAGER_MODS + " Folder", menu_mod_open_managed_folder)
             menu_option_add("Backup and Clear Mods Folder", menu_mod_backup_clear)
+            menu_option_add("Management Settings", menu_mod_config_settings)
             menu_option_add("Development Mode", watchdog_mode)
             sub_header()
             menu_option_add("Back", menu_back)
@@ -602,15 +639,6 @@ def menu_main_mod_options():
 def toggle_save_field(saveString):
     if saveData[saveString] != None:
         saveData[saveString] = save_field(saveString, not saveData[saveString])
-
-def menu_manager_toggle_backup():
-    toggle_save_field("autoBackup")
-def menu_manager_toggle_chime():
-    toggle_save_field("loadChime")
-def menu_manager_toggle_dirs():
-    toggle_save_field("showDirs")
-def menu_manager_toggle_uncomp_files():
-    toggle_save_field("skipUncompiled")
 
 def menu_manager_info():
     clear_with_header()
@@ -629,11 +657,11 @@ def menu_manager_info():
     # Appdata Exists
     if os.path.isdir(APPDATA_DIR):
         if saveData["showDirs"]:
-            print("Managed Mods Directory: '" + saveData["managedDir"] + "'")
+            print(NAME_MANAGER_MODS + " Directory: '" + saveData["managedDir"] + "'")
         else:
-            print("Managed Mods Directory Valid")
+            print(NAME_MANAGER_MODS + " Directory Valid")
     else:
-        print("Managed Mods Directory Invalid")
+        print(NAME_MANAGER_MODS + " Directory Invalid")
     # Other Save Data
     print("Auto-Backup Mods: " + str(saveData["autoBackup"]))
     print("Load Chime: " + str(saveData["loadChime"]))
@@ -667,16 +695,12 @@ def menu_manager_links():
 def menu_main_manager_options():
     while(True):
         clear_with_header()
-        sub_header(NAME_MANAGER_CONFIG)
+        sub_header(NAME_MANAGER_PATH_CONFIG)
         menu_clear()
-        menu_option_add("Configure " + NAME_SM64COOPDX + " Executible Path", config_coop_dir)
-        menu_option_add("Configure Managed Mods Directory", config_managed_dir)
-        sub_header(NAME_MANAGER_SETTINGS)
-        menu_option_add("Auto-Backup (" + str(saveData["autoBackup"]) + ")", menu_manager_toggle_backup)
-        menu_option_add("Load Chime (" + str(saveData["loadChime"]) + ")", menu_manager_toggle_chime)
-        menu_option_add("Streamer Mode (" + str(not saveData["showDirs"]) + ")", menu_manager_toggle_dirs)
-        menu_option_add("Skip Uncompiled Files (" + str(saveData["skipUncompiled"]) + ")", menu_manager_toggle_uncomp_files)
-        sub_header(NAME_MANAGER_HELP)
+        menu_option_add(NAME_SM64COOPDX + " Executible Path", config_coop_dir)
+        menu_option_add(NAME_MANAGER_MODS + " Directory", config_managed_dir)
+        sub_header(NAME_MANAGER_SETTINGS_AND_HELP)
+        menu_option_add("Streamer Mode " + str(not saveData["showDirs"]), menu_manager_toggle_dirs)
         menu_option_add("Info", menu_manager_info)
         menu_option_add("Support Links", menu_manager_links)
         sub_header()
