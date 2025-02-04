@@ -560,6 +560,7 @@ def menu_mod_open_managed_folder():
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+queueRefresh = False
 class watchdogHandler(FileSystemEventHandler):
     def on_any_event(self, event: FileSystemEvent) -> None:
         print()
@@ -572,7 +573,9 @@ class watchdogHandler(FileSystemEventHandler):
             print("Change detected at " + event.src_path)
         else:
             print("Change detected!")
-        load_mod_folders()
+        global queueRefresh
+        if not queueRefresh:
+            queueRefresh = True
 
 def watchdog_mode():
     clear_with_header()
@@ -605,7 +608,12 @@ def watchdog_mode():
         observer.start()
         print("Observer Started")
         while True:
-            time.sleep(1)
+            global queueRefresh
+            if queueRefresh == True:
+                load_mod_folders()
+                queueRefresh = False
+                print("Pushed Changes to Mods Folder")
+
 
 def menu_mod_config_settings():
     while(True):
