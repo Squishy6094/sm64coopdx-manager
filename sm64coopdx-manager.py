@@ -250,10 +250,10 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
             print("Forcing Auto-Backup...")
     if os.path.isdir(dir):
         print("Appdata Mods Folder Found!")
-        print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
-        unhide_tree(dir)
-        print("Ensuring Backups Folder is writeable...")
-        unhide_tree(saveData["managedDir"] + "/.backup")
+        #print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
+        #unhide_tree(dir)
+        #print("Ensuring Backups Folder is writeable...")
+        #unhide_tree(saveData["managedDir"] + "/.backup")
         print("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
         shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=shutil.copy)
         if wipeModFolder:
@@ -262,8 +262,8 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
     dir = folder_from_file_dir(saveData["coopDir"]) + "/mods"
     if os.path.isdir(dir):
         print("Install Directory Mods Folder Found!")
-        print("Ensuring " + NAME_SM64COOPDX + "'s Install Mods are moveable...")
-        unhide_tree(dir)
+        #print("Ensuring " + NAME_SM64COOPDX + "'s Install Mods are moveable...")
+        #unhide_tree(dir)
         print("Cleaning " + NAME_MANAGER + "'s Default Folder...")
         shutil.rmtree(saveData["managedDir"] + "/default", ignore_errors=True)
         print("Backing up " + NAME_SM64COOPDX + "'s Install Mods Folder...")
@@ -326,8 +326,8 @@ def load_mod_folders():
     if saveData["skipUncompiled"]:
         print("Uncompiled Files will be skipped when moving!")
     for f in enabledMods:
-        print("Ensuring " + f + "'s Mods are moveable...")
-        unhide_tree(saveData["managedDir"] + "/" + f)
+        #print("Ensuring " + f + "'s Mods are moveable...")
+        #unhide_tree(saveData["managedDir"] + "/" + f)
         print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
         ignoreInput = IGNORE_INCLUDE_FILES
         if saveData["skipUncompiled"]:
@@ -563,18 +563,18 @@ from watchdog.observers import Observer
 queueRefresh = False
 class watchdogHandler(FileSystemEventHandler):
     def on_any_event(self, event: FileSystemEvent) -> None:
-        print()
-        
-        if str(event.src_path).find(".git") != -1 or str(event.src_path).endswith("~"):
-            print("Ignoring " + event.src_path)
-            return None
-        
-        if saveData["showDirs"]:
-            print("Change detected at " + event.src_path)
-        else:
-            print("Change detected!")
         global queueRefresh
         if not queueRefresh:
+            
+            if str(event.src_path).find(".git") != -1 or str(event.src_path).endswith("~"):
+                print("Ignoring " + event.src_path)
+                return None
+            
+            print()
+            if saveData["showDirs"]:
+                print("Change detected at " + event.src_path)
+            else:
+                print("Change detected!")
             queueRefresh = True
 
 def watchdog_mode():
