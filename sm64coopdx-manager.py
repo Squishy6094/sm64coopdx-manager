@@ -175,6 +175,9 @@ def sub_header(headerText="|", length=SUB_HEADER_LENGTH_DEFAULT):
         subheaderText = subheaderText + "="
     print(subheaderText)
 
+def print_with_timestamp(string):
+    return print(str(datetime.now().time()) + " - " + string)
+
 def read_or_new_save(path, default):
     if os.path.isfile(path):
         with open(path, "r") as f:
@@ -257,36 +260,36 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
     dir = return_consistent_dir(APPDATA_DIR + "/mods")
     if not saveData["autoBackup"]:
         if not forceBackup:
-            print("Skipping Auto-Backup...")
+            print_with_timestamp("Skipping Auto-Backup...")
             if wipeModFolder:
-                print("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
+                print_with_timestamp("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
                 shutil.rmtree(dir, ignore_errors=True, onerror=del_rw)
             return
         else:
-            print("Forcing Auto-Backup...")
+            print_with_timestamp("Forcing Auto-Backup...")
     if os.path.isdir(dir):
-        print("Appdata Mods Folder Found!")
+        print_with_timestamp("Appdata Mods Folder Found!")
         #print("Ensuring " + NAME_SM64COOPDX + "'s Appdata Mods are moveable...")
         #unhide_tree(dir)
         #print("Ensuring Backups Folder is writeable...")
         #unhide_tree(saveData["managedDir"] + "/.backup")
-        print("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
+        print_with_timestamp("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
         with MultithreadedCopier(max_threads=16) as copier:
             shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=copier.copy)
         if wipeModFolder:
-            print("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
+            print_with_timestamp("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
             shutil.rmtree(dir, ignore_errors=True, onerror=del_rw)
     dir = folder_from_file_dir(saveData["coopDir"]) + "/mods"
     if os.path.isdir(dir):
-        print("Install Directory Mods Folder Found!")
+        print_with_timestamp("Install Directory Mods Folder Found!")
         #print("Ensuring " + NAME_SM64COOPDX + "'s Install Mods are moveable...")
         #unhide_tree(dir)
-        print("Cleaning " + NAME_MANAGER + "'s Default Folder...")
+        print_with_timestamp("Cleaning " + NAME_MANAGER + "'s Default Folder...")
         shutil.rmtree(saveData["managedDir"] + "/default", ignore_errors=True)
-        print("Backing up " + NAME_SM64COOPDX + "'s Install Mods Folder...")
+        print_with_timestamp("Backing up " + NAME_SM64COOPDX + "'s Install Mods Folder...")
         with MultithreadedCopier(max_threads=16) as copier:
             shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=copier.copy)
-        print("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
+        print_with_timestamp("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
         shutil.move(dir, saveData["managedDir"] + "/default")
 
 # Backup on Bootup
@@ -338,15 +341,15 @@ IGNORE_INCLUDE_FILES_COMP_ONLY = include_patterns('*.lua', '*.luac',
 def load_mod_folders():
     if not os.path.isdir(APPDATA_DIR):
         return
-    print("Loading mods...")
+    print_with_timestamp("Loading mods...")
     backup_mods(True)
     enabledMods = get_enabled_mod_folders()
     if saveData["skipUncompiled"]:
-        print("Uncompiled Files will be skipped when moving!")
+        print_with_timestamp("Uncompiled Files will be skipped when moving!")
     for f in enabledMods:
         #print("Ensuring " + f + "'s Mods are moveable...")
         #unhide_tree(saveData["managedDir"] + "/" + f)
-        print("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
+        print_with_timestamp("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
         ignoreInput = IGNORE_INCLUDE_FILES
         if saveData["skipUncompiled"]:
             ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
@@ -374,9 +377,9 @@ def boot_coop():
     sub_header("Standard Boot")
     load_mod_folders()
     if saveData["showDirs"]:
-        print("Booting " + NAME_SM64COOPDX + " from Path: '" + coopDirectory + "'")
+        print_with_timestamp("Booting " + NAME_SM64COOPDX + " from Path: '" + coopDirectory + "'")
     else:
-        print("Booting " + NAME_SM64COOPDX)
+        print_with_timestamp("Booting " + NAME_SM64COOPDX)
     open_file(coopDirectory)
 
 
@@ -620,18 +623,18 @@ def watchdog_mode():
         clear()
         modFolders = get_enabled_mod_folders()
         observer = Observer()
-        print("Setting up Observer")
+        print_with_timestamp("Setting up Observer")
         for x in modFolders:
-            print("Scheduling Mod Folder " + x)
+            print_with_timestamp("Scheduling Mod Folder " + x)
             observer.schedule(watchdogHandler(), return_consistent_dir(saveData["managedDir"] + "/" + x), recursive=True)
         observer.start()
-        print("Observer Started")
+        print_with_timestamp("Observer Started")
         while True:
             global queueRefresh
             if queueRefresh == True:
                 load_mod_folders()
                 queueRefresh = False
-                print("Pushed Changes to Mods Folder")
+                print_with_timestamp("Pushed Changes to Mods Folder")
 
 
 def menu_mod_config_settings():
