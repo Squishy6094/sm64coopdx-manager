@@ -4,7 +4,8 @@ import sys
 import subprocess
 import stat
 import shutil
-import pickle
+# import pickle
+import json
 import webbrowser
 import time
 from pathlib import Path
@@ -91,7 +92,7 @@ def folder_from_file_dir(filename):
 USER_DIR = return_consistent_dir(Path.home())
 os.chdir(USER_DIR)
 FILE_DIR = return_consistent_dir(os.path.realpath(__file__))
-SAVE_DIR = return_consistent_dir((folder_from_file_dir(FILE_DIR) + "coop-manager-" + VERSION + ".pickle"))
+SAVE_DIR = return_consistent_dir((folder_from_file_dir(FILE_DIR) + "coop-manager-" + VERSION + ".json"))
 def get_appdata_dir():
     generalAppdata = ""
 
@@ -174,16 +175,16 @@ def sub_header(headerText="|", length=SUB_HEADER_LENGTH_DEFAULT):
         subheaderText = subheaderText + "="
     print(subheaderText)
 
-def read_or_new_pickle(path, default):
+def read_or_new_save(path, default):
     if os.path.isfile(path):
-        with open(path, "rb") as f:
+        with open(path, "r") as f:
             try:
-                return pickle.load(f)
+                return json.load(f)
             except Exception:
                 pass
     else:
-        with open(path, 'wb') as f:
-            pickle.dump(default, f)
+        with open(path, 'w') as f:
+            json.dump(default, f)
     return default
 
 # Save Data Handler
@@ -196,11 +197,11 @@ saveData = {
     "skipUncompiled": False,
     "mods-.backup": False,
 }
-saveData = read_or_new_pickle(SAVE_DIR, saveData)
+saveData = read_or_new_save(SAVE_DIR, saveData)
 def save_field(field, value):
     saveData[field] = value
-    with open(SAVE_DIR, "wb") as f:
-        pickle.dump(saveData, f)
+    with open(SAVE_DIR, "w") as f:
+        json.dump(saveData, f)
     return value
 
 if not os.path.isdir(saveData["managedDir"]):
@@ -218,6 +219,21 @@ def notify(sound=NOTIF_1UP):
             chime.info(sync=True)
 
 # File Management
+from multiprocessing.pool import ThreadPool
+class MultithreadedCopier:
+    def __init__(self, max_threads):
+        self.pool = ThreadPool(max_threads)
+
+    def copy(self, source, dest):
+        self.pool.apply_async(shutil.copy2, args=(source, dest))
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.pool.close()
+        self.pool.join()
+
 def file_unpermitted(filepath):
     fileStats = os.stat(filepath).st_file_attributes
     return not (bool(fileStats & stat.S_IRWXU) and bool(fileStats & stat.FILE_ATTRIBUTE_HIDDEN))
@@ -255,7 +271,8 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         #print("Ensuring Backups Folder is writeable...")
         #unhide_tree(saveData["managedDir"] + "/.backup")
         print("Backing up " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
-        shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=shutil.copy)
+        with MultithreadedCopier(max_threads=16) as copier:
+            shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=copier.copy)
         if wipeModFolder:
             print("Cleaning " + NAME_SM64COOPDX + "'s Appdata Mods Folder...")
             shutil.rmtree(dir, ignore_errors=True, onerror=del_rw)
@@ -267,7 +284,8 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
         print("Cleaning " + NAME_MANAGER + "'s Default Folder...")
         shutil.rmtree(saveData["managedDir"] + "/default", ignore_errors=True)
         print("Backing up " + NAME_SM64COOPDX + "'s Install Mods Folder...")
-        shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True)
+        with MultithreadedCopier(max_threads=16) as copier:
+            shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=copier.copy)
         print("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
         shutil.move(dir, saveData["managedDir"] + "/default")
 
@@ -332,8 +350,9 @@ def load_mod_folders():
         ignoreInput = IGNORE_INCLUDE_FILES
         if saveData["skipUncompiled"]:
             ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
-        shutil.copytree(saveData["managedDir"] + "/" + f, APPDATA_DIR + "/mods",
-            ignore=ignoreInput, dirs_exist_ok=True)
+        
+        with MultithreadedCopier(max_threads=16) as copier:
+            shutil.copytree(saveData["managedDir"] + "/" + f, APPDATA_DIR + "/mods", ignore=ignoreInput, dirs_exist_ok=True, copy_function=copier.copy)
     notify()
 
 def open_file(filename):
