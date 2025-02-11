@@ -535,7 +535,11 @@ def menu_mod_folder_config():
             except:
                 saveData["mods-" + x] = save_field("mods-" + x, True)
                 modOnOff = True
-            print(str(modNum) + ". " + menu_option_name_with_toggle(x, modOnOff))
+            printString = ""
+            while len(printString) < (len(str(len(mods))) - (len(str(modNum)) - 1)):
+                printString = printString + " "
+            printString = str(modNum) + "." + printString + menu_option_name_with_toggle(x, modOnOff)
+            print(printString)
         print()
         print("Mods can be sorted in your 'managed-mods' Folder")
         if saveData["showDirs"]:
