@@ -133,33 +133,33 @@ import importlib.util
 installedModuleList = []
 mustInstallModuleList = []
 queueRestart = False
-def check_module(package):
+def check_module(package, version):
     packageSpec = importlib.util.find_spec(package)
     if packageSpec == None:
-        mustInstallModuleList.append(package)
+        mustInstallModuleList.append([package, version])
     else:
-        installedModuleList.append(package)
+        installedModuleList.append([package, version])
 
 def check_missing_module_and_stop():
     if len(mustInstallModuleList) > 0:
         clear()
         print(NAME_MANAGER + " requires the following python libraries to be installed before use:")
         for x in mustInstallModuleList:
-            print("- " + x.capitalize())
+            print("- " + x[0].capitalize() + " (" + x[1] + ")")
         print()
         print("The following command can be used if you have 'pip' Installed")
         installCommand = "'pip install"
         for x in mustInstallModuleList:
-            installCommand = installCommand + " " + x
+            installCommand = installCommand + " " + x[0] + "==" + x[1]
         installCommand = installCommand + "'"
         print(installCommand)
         print()
         input("Press Enter to Exit Program")
         exit()
     
-check_module('requests')
-check_module('chime')
-check_module('watchdog')
+check_module('requests', "2.32.3")
+check_module('chime', "0.7.0")
+check_module('watchdog', "6.0.0")
 check_missing_module_and_stop()
 import requests
 import chime
@@ -739,9 +739,9 @@ def menu_manager_info():
     print("Load Chime: " + str(saveData["loadChime"]))
     print("Streamer Mode (Hide Directories): " + str(not saveData["loadChime"]))
     sub_header("Library Info")
-    print("Required Python Libraries Installed:")
+    print("Python Libraries Installed:")
     for x in installedModuleList:
-        print("- " + x)
+        print(menu_option_name_with_toggle("- " + x[0], x[1]))
     input("Press Enter to return to " + NAME_MAIN_MENU)
 
 def menu_manager_link_github():
