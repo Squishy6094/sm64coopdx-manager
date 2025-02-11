@@ -338,7 +338,16 @@ IGNORE_INCLUDE_FILES_COMP_ONLY = include_patterns('*.lua', '*.luac',
 '*.lvl',
 '*.tex')
 
-def load_mod_folders():
+def load_mod_folder(folderName):
+    print_with_timestamp("Cloning '" + folderName + "' to " + NAME_SM64COOPDX + "'s Mods Folder")
+    ignoreInput = IGNORE_INCLUDE_FILES
+    if saveData["skipUncompiled"]:
+        ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
+    srcDest = saveData["managedDir"] + "/" + folderName
+    with MultithreadedCopier(max_threads=16) as copier:
+        shutil.copytree(srcDest, APPDATA_DIR + "/mods", ignore=ignoreInput, dirs_exist_ok=True, copy_function=copier.copy)
+
+def load_enabled_mod_folders():
     if not os.path.isdir(APPDATA_DIR):
         return
     print_with_timestamp("Loading mods...")
@@ -347,15 +356,8 @@ def load_mod_folders():
     if saveData["skipUncompiled"]:
         print_with_timestamp("Uncompiled Files will be skipped when moving!")
     for f in enabledMods:
-        #print("Ensuring " + f + "'s Mods are moveable...")
-        #unhide_tree(saveData["managedDir"] + "/" + f)
-        print_with_timestamp("Cloning " + f + " to " + NAME_SM64COOPDX + "'s Mods Folder")
-        ignoreInput = IGNORE_INCLUDE_FILES
-        if saveData["skipUncompiled"]:
-            ignoreInput = IGNORE_INCLUDE_FILES_COMP_ONLY
+        load_mod_folder(f)
         
-        with MultithreadedCopier(max_threads=16) as copier:
-            shutil.copytree(saveData["managedDir"] + "/" + f, APPDATA_DIR + "/mods", ignore=ignoreInput, dirs_exist_ok=True, copy_function=copier.copy)
     notify()
 
 def open_file(filename):
@@ -375,7 +377,7 @@ def open_folder(foldername):
 def boot_coop():
     coopDirectory = saveData["coopDir"]
     sub_header("Standard Boot")
-    load_mod_folders()
+    load_enabled_mod_folders()
     if saveData["showDirs"]:
         print_with_timestamp("Booting " + NAME_SM64COOPDX + " from Path: '" + coopDirectory + "'")
     else:
@@ -559,10 +561,10 @@ def menu_mod_folder_config():
                 save_field("mods-" + x, False)
         if prompt3 == "apply" or prompt3 == "":
             clear_with_header()
-            load_mod_folders()
+            load_enabled_mod_folders()
         if prompt3 == "back":
             clear_with_header()
-            load_mod_folders()
+            load_enabled_mod_folders()
             break
         modNum = 0
         for x in mods:
@@ -636,7 +638,7 @@ def watchdog_mode():
         while True:
             global queueRefresh
             if queueRefresh == True:
-                load_mod_folders()
+                load_enabled_mod_folders()
                 queueRefresh = False
                 print_with_timestamp("Pushed Changes to Mods Folder")
 
