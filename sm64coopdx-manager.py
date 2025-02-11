@@ -614,7 +614,7 @@ class watchdogHandler(FileSystemEventHandler):
         if changedFolder == "":
             
             if str(event.src_path).find(".git") != -1 or str(event.src_path).endswith("~"):
-                print_with_timestamp("Ignoring " + event.src_path)
+                print_with_timestamp("Ignoring " + truncate_consistent_dir(event.src_path))
                 return None
             
             sub_header("Change Detected")
