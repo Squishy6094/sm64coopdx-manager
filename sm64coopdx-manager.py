@@ -49,6 +49,7 @@ sys.excepthook = show_exception_and_exit
 # Define Constants
 NAME_SM64COOPDX = "SM64CoopDX"
 NAME_MANAGER = NAME_SM64COOPDX + " Manager"
+NAME_MANAGER_FOLDER = "managed-mods"
 NAME_MANAGER_MODS = "Managed Mods"
 NAME_MAIN_MENU = "Main Options"
 NAME_MODS_MENU = "Mod Options"
@@ -63,6 +64,13 @@ DATE = datetime.now().strftime("%m/%d/%Y")
 clear()
 print("Booting " + NAME_MANAGER + "...")
 
+def get_dir_split():
+    if platform_is_windows():
+        return "\\"
+    else:
+        return "/"
+
+
 def return_consistent_dir(dir):
     if platform_is_windows():
         dir = str(dir).replace("/", "\\")
@@ -72,11 +80,22 @@ def return_consistent_dir(dir):
 
 def split_consistent_dir(dir):
     dir = return_consistent_dir(dir)
-    if platform_is_windows():
-        dir = str(dir).split("\\")
-    else:
-        dir = str(dir).split("/")
+    dir = str(dir).split(get_dir_split())
     return dir
+
+def truncate_consistent_dir(dir = "", leftmostDir = NAME_MANAGER_FOLDER):
+    if dir.find(leftmostDir) == -1:
+        return "..."
+    dir = split_consistent_dir(dir)
+    dirCheck = 0
+    while dir[dirCheck] != leftmostDir:
+        dirCheck = dirCheck + 1
+    dirString = "..."
+    while dirCheck < len(dir):
+        dirString = dirString + get_dir_split() + dir[dirCheck]
+        dirCheck = dirCheck + 1
+    return dirString
+        
     
 def folder_from_file_dir(filename):
     splitDir = split_consistent_dir(filename)
@@ -193,7 +212,7 @@ def read_or_new_save(path, default):
 # Save Data Handler
 saveData = {
     "coopDir": return_consistent_dir(USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
-    "managedDir": return_consistent_dir(APPDATA_DIR + '/managed-mods'),
+    "managedDir": return_consistent_dir(APPDATA_DIR + '/' + NAME_MANAGER_FOLDER),
     "autoBackup": True,
     "loadChime": True,
     "showDirs": True,
@@ -421,7 +440,7 @@ def config_managed_dir():
         inputDir = return_consistent_dir(input("> "))
         if os.path.isdir(inputDir):
             prevManagedDir = saveData["managedDir"]
-            saveData["managedDir"] = save_field("managedDir", inputDir + '/managed-mods')
+            saveData["managedDir"] = save_field("managedDir", inputDir + '/' + NAME_MANAGER_FOLDER)
             try:
                 shutil.move(prevManagedDir, saveData["managedDir"])
             except:
@@ -543,7 +562,7 @@ def menu_mod_folder_config():
             printString = str(modNum) + "." + printString + menu_option_name_with_toggle(x, modOnOff)
             print(printString)
         print()
-        print("Mods can be sorted in your 'managed-mods' Folder")
+        print("Mods can be sorted in your '" + NAME_MANAGER_FOLDER + "' Folder")
         if saveData["showDirs"]:
             print("(" + saveData["managedDir"] + ")")
         print()
@@ -588,22 +607,20 @@ def menu_mod_open_managed_folder():
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-queueRefresh = False
+changedFolder = ""
 class watchdogHandler(FileSystemEventHandler):
     def on_any_event(self, event: FileSystemEvent) -> None:
-        global queueRefresh
-        if not queueRefresh:
+        global changedFolder
+        if changedFolder == "":
             
             if str(event.src_path).find(".git") != -1 or str(event.src_path).endswith("~"):
-                print("Ignoring " + event.src_path)
+                print_with_timestamp("Ignoring " + event.src_path)
                 return None
             
-            print()
-            if saveData["showDirs"]:
-                print("Change detected at " + event.src_path)
-            else:
-                print("Change detected!")
-            queueRefresh = True
+            sub_header("Change Detected")
+            dirShortString = truncate_consistent_dir(event.src_path)
+            print_with_timestamp("Changed at: " + dirShortString)
+            changedFolder = split_consistent_dir(dirShortString)[2]
 
 def watchdog_mode():
     clear_with_header()
@@ -614,7 +631,7 @@ def watchdog_mode():
     print("The program cannot exit out of this mode via prompts once started")
     if saveData["autoBackup"] or not saveData["skipUncompiled"]:
         print()
-        print("Note: It is highly recommended you turn off the following settings in Manager Options")
+        print("Note: It is highly recommended you toggle the following settings in Manager Options")
         if saveData["autoBackup"]:
             print("Auto-Backup")
         if not saveData["skipUncompiled"]:
@@ -627,6 +644,7 @@ def watchdog_mode():
     else:
         notify(NOTIF_COIN)
         clear()
+        sub_header("Development Mode")
         modFolders = get_enabled_mod_folders()
         observer = Observer()
         print_with_timestamp("Setting up Observer")
@@ -636,10 +654,10 @@ def watchdog_mode():
         observer.start()
         print_with_timestamp("Observer Started")
         while True:
-            global queueRefresh
-            if queueRefresh == True:
-                load_enabled_mod_folders()
-                queueRefresh = False
+            global changedFolder
+            if changedFolder != "":
+                load_mod_folder(changedFolder)
+                changedFolder = ""
                 print_with_timestamp("Pushed Changes to Mods Folder")
 
 
