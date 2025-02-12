@@ -659,6 +659,7 @@ def watchdog_mode():
                 load_mod_folder(changedFolder)
                 changedFolder = ""
                 print_with_timestamp("Pushed Changes to Mods Folder")
+                notify(NOTIF_COIN)
 
 
 def menu_mod_config_settings():
