@@ -622,23 +622,25 @@ class watchdogHandler(FileSystemEventHandler):
             print_with_timestamp("Changed at: " + dirShortString)
             changedFolder = split_consistent_dir(dirShortString)[2]
 
-def watchdog_mode():
-    clear_with_header()
-    print(NAME_MANAGER + " will now enter Development Mode")
-    print()
-    print("The program will idle and look for changes in your active " + NAME_MANAGER_MODS + " Folders,")
-    print("Once a change is detected it will automatically push the " + NAME_MANAGER_MODS + " to " + NAME_SM64COOPDX + "'s Mods Folder")
-    print("The program cannot exit out of this mode via prompts once started")
-    if saveData["autoBackup"] or not saveData["skipUncompiled"]:
+def watchdog_mode(skipPrompt=False):
+    confirm = ""
+    if not skipPrompt:
+        clear_with_header()
+        print(NAME_MANAGER + " will now enter Development Mode")
         print()
-        print("Note: It is highly recommended you toggle the following settings in Manager Options")
-        if saveData["autoBackup"]:
-            print("Auto-Backup")
-        if not saveData["skipUncompiled"]:
-            print("Skip Uncompiled Files")
-    print()
-    print("Press ENTER to continute, or type 'back' to exit")
-    confirm = input("> ")
+        print("The program will idle and look for changes in your active " + NAME_MANAGER_MODS + " Folders,")
+        print("Once a change is detected it will automatically push the " + NAME_MANAGER_MODS + " to " + NAME_SM64COOPDX + "'s Mods Folder")
+        print("The program cannot exit out of this mode via prompts once started")
+        if saveData["autoBackup"] or not saveData["skipUncompiled"]:
+            print()
+            print("Note: It is highly recommended you toggle the following settings in Manager Options")
+            if saveData["autoBackup"]:
+                print("Auto-Backup")
+            if not saveData["skipUncompiled"]:
+                print("Skip Uncompiled Files")
+        print()
+        print("Press ENTER to continute, or type 'back' to exit")
+        confirm = input("> ")
     if confirm.lower() == "back":
         return False
     else:
@@ -786,7 +788,30 @@ def menu_main_manager_options():
 ## Main Menu ##
 ###############
 
-notify()
+launchOptions = None
+
+# Launch Options
+if __name__ == '__main__':
+    import sys
+    launchOptions = sys.argv
+    launchOptions = str(launchOptions[1]).split(" ")
+
+if launchOptions != None:
+    notify(NOTIF_COIN)
+    if launchOptions[0] == "boot":
+        boot_coop()
+    elif launchOptions[0] == "mods":
+        menu_mod_folder_config()
+        try:
+            if launchOptions[1] == "boot":
+                boot_coop()
+        except:
+            print_with_timestamp("Redirecting to Home Menu")
+    elif launchOptions[0] == "dev":
+        watchdog_mode(True)
+        print_with_timestamp("Redirecting to Home Menu")
+else:
+    notify()
 while(True):
     clear_with_header()
     sub_header(NAME_MAIN_MENU)
