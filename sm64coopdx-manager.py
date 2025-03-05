@@ -808,6 +808,8 @@ if launchOptions != None:
         try:
             if launchOptions[1] == "boot":
                 boot_coop()
+            if launchOptions[1] == "dev":
+                watchdog_mode(True)
         except:
             print_with_timestamp("Redirecting to Home Menu")
     elif launchOptions[0] == "dev":
