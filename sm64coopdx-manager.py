@@ -794,7 +794,10 @@ launchOptions = None
 if __name__ == '__main__':
     import sys
     launchOptions = sys.argv
-    launchOptions = str(launchOptions[1]).split(" ")
+    try:
+        launchOptions = str(launchOptions[1]).split(" ")
+    except:
+        launchOptions = None
 
 if launchOptions != None:
     notify(NOTIF_COIN)
