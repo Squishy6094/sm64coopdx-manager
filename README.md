@@ -13,6 +13,7 @@ SM64CoopDX Manager attempts to be as user friendly as possible for a console-bas
 - **Python Libraries** - Must be installed in order to use SM64CoopDX Manager, if pip is installed you can use these commands in your terminal of choice to download them manually.
   - [requests](https://pypi.org/project/requests/) - `python -m pip install requests`
   - [chime](https://pypi.org/project/chime/) - `python -m pip install chime`
+  - [watchdog](https://pypi.org/project/watchdog/) - `python -m pip install watchdog`
 
 ### Starting the program:
 After installing all of the required dependancies, you should be able to launch the python file in the same way you would an executible file. Once starting, it will attempt to download the Python Libraries above automatically if you haven't already, then you will boot into the Manager Menu!
