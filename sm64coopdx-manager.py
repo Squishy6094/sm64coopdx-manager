@@ -37,13 +37,19 @@ def clear():
 
 # Ensure Errors are Readable and Reportable
 def show_exception_and_exit(exc_type, exc_value, tb):
-    clear()
-    import traceback
-    traceback.print_exception(exc_type, exc_value, tb)
-    print()
-    print("Please report this error to the Github!")
-    input("Press Enter to Close Program")
-    sys.exit(-1)
+    if exc_type == KeyboardInterrupt:
+        clear()
+        print("Keyboard Interupt Detected")
+        input("Press Enter to Close Program")
+        sys.exit(0)
+    else:
+        clear()
+        import traceback
+        traceback.print_exception(exc_type, exc_value, tb)
+        print()
+        print("Please report this error to the Github!")
+        input("Press Enter to Close Program")
+        sys.exit(-1)
 sys.excepthook = show_exception_and_exit
 
 # Define Constants
@@ -163,7 +169,7 @@ check_module('watchdog', "6.0.0")
 check_missing_module_and_stop()
 import requests
 import chime
-import watchdog
+# import watchdog
 
 def github_version_check():
     try:
@@ -275,6 +281,32 @@ def del_rw(action, name, exc):
     os.chmod(name, stat.S_IWRITE)
     os.remove(name)
 
+def pull_mod_from_github(savedRepo):
+    repo = savedRepo.replace("github-", "")
+    githubURL = "https://github.com/" + repo
+    currentCommit = saveData.get(savedRepo, "0")
+    print_with_timestamp(f"Checking for Updates from: {repo}")
+    response = requests.get(githubURL, stream=True)
+    if response.status_code == 200:
+        latest_commit = response.json()["sha"]
+        if currentCommit != latest_commit:
+            save_field(savedRepo, latest_commit)
+            print(f"Update to latest commit: {latest_commit}")
+            if response.status_code == 200 and 'content-type' in response.headers and 'application/zip' in response.headers['content-type']:
+                zip_path = os.path.join(saveData["managedDir"], "")
+                with open(zip_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        f.write(chunk)
+                shutil.unpack_archive(zip_path, saveData["managedDir"])
+                os.remove(zip_path)
+                print("Downloaded and extracted successfully!")
+            else:
+                print("Invalid URL or not a zip file.")
+        else:
+            print("Already up-to-date with the latest commit.")
+    else:
+        print("Failed to fetch the latest commit. Please check the repository name.")
+
 def backup_mods(wipeModFolder=False, forceBackup=False):
     dir = return_consistent_dir(APPDATA_DIR + "/mods")
     if not saveData["autoBackup"]:
@@ -310,6 +342,11 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
             shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=copier.copy)
         print_with_timestamp("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
         shutil.move(dir, saveData["managedDir"] + "/default")
+    # Pull Github Mods
+    print_with_timestamp(f"Pulling Github Mods...")
+    github_save_data = {key: value for key, value in saveData.items() if key.startswith("github-")}
+    for key, value in github_save_data.items():
+        repo = key.replace("github-", "")
 
 # Backup on Bootup
 clear_with_header()
@@ -604,6 +641,33 @@ def menu_mod_backup_clear():
 def menu_mod_open_managed_folder():
     open_folder(saveData["managedDir"])
 
+def menu_mod_github_config():
+    while(True):
+        clear_with_header()
+        github_save_data = {key: value for key, value in saveData.items() if key.startswith("github-")}
+        if len(github_save_data) < 1:
+            print("No Auto-Update Mods Configured")
+        else:
+            sub_header("Auto-Update Mods:")
+            for key, value in github_save_data.items():
+                repo = key.replace("github-", "")
+                print(f"{repo} - ({value})")
+            print()
+        print("Type a valid github repository to add it, (ex. Squishy6094/character-select-coop)")
+        print("Type 'back' to return to " + NAME_MODS_MENU)
+        prompt1 = input("> ")
+        if prompt1.lower() == "back":
+            break
+        try:
+            githubURL = "https://github.com/" + prompt1
+            response = requests.get(githubURL, stream=True)
+            if response.status_code == 200:
+                save_field("github-" + prompt1, "0")
+            else:
+                print("Invalid Repository")
+        except Exception as e:
+            print(f"Error occurred: {e}")
+
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -704,6 +768,7 @@ def menu_main_mod_options():
             menu_option_add("Open " + NAME_MANAGER_MODS + " Folder", menu_mod_open_managed_folder)
             menu_option_add("Backup and Clear Mods Folder", menu_mod_backup_clear)
             menu_option_add("Management Settings", menu_mod_config_settings)
+            menu_option_add("Config Auto-Update Mods", menu_mod_github_config)
             menu_option_add("Development Mode", watchdog_mode)
             sub_header()
             menu_option_add("Back", menu_back)
