@@ -64,7 +64,7 @@ NAME_MANAGER_SETTINGS_AND_HELP = "Settings and Help"
 NAME_MANAGER_SETTINGS = "Settings"
 NAME_MANAGER_HELP = "Help"
 NAME_FOLDER_OPTIONS = "Mod Folder Toggles"
-VERSION = "1.1"
+VERSION = "1.2"
 DATE = datetime.now().strftime("%m/%d/%Y")
 
 clear()
@@ -117,7 +117,7 @@ def folder_from_file_dir(filename):
 USER_DIR = return_consistent_dir(Path.home())
 os.chdir(USER_DIR)
 FILE_DIR = return_consistent_dir(os.path.realpath(__file__))
-SAVE_DIR = return_consistent_dir((folder_from_file_dir(FILE_DIR) + "coop-manager-" + VERSION + ".json"))
+SAVE_DIR = return_consistent_dir((folder_from_file_dir(FILE_DIR) + "coop-manager.json"))
 def get_appdata_dir():
     generalAppdata = ""
 
@@ -171,23 +171,18 @@ import requests
 import chime
 # import watchdog
 
-def github_version_check():
-    try:
-        return requests.get("https://api.github.com/repos/Squishy6094/sm64coopdx-manager/releases/latest").json()["tag_name"]
-    except:
-        return None
+GITHUB_UPDATE = requests.get("https://api.github.com/repos/Squishy6094/sm64coopdx-manager/releases/latest").json()["tag_name"]
 
 def clear_with_header():
     clear()
-    updateString = github_version_check()
     header = " " + NAME_MANAGER + " v" + VERSION + " - " + DATE + " "
     headerBreak = ""
     while len(headerBreak) < len(header):
         headerBreak = headerBreak + "="
     print(headerBreak)
     print(header)
-    if updateString != None and updateString != "v" + VERSION:
-        print(" Update Avalible! v" + VERSION + " -> " + updateString)
+    if GITHUB_UPDATE != None and GITHUB_UPDATE != "v" + VERSION:
+        print(" Update Avalible! v" + VERSION + " -> " + GITHUB_UPDATE)
     print(headerBreak)
     print()
 
@@ -217,11 +212,12 @@ def read_or_new_save(path, default):
 
 # Save Data Handler
 saveData = {
-    "coopDir": return_consistent_dir(USER_DIR + '/Downloads/sm64coopdx/sm64coopdx.exe'),
+    "coopDir": return_consistent_dir(USER_DIR + '/Downloads/sm64coopdx/sm64coopdx' + (".exe" if platform_is_windows() else "")),
     "managedDir": return_consistent_dir(APPDATA_DIR + '/' + NAME_MANAGER_FOLDER),
     "autoBackup": True,
     "loadChime": True,
     "showDirs": True,
+    "githubMods": True,
     "skipUncompiled": False,
     "mods-.backup": False,
 }
@@ -282,32 +278,79 @@ def del_rw(action, name, exc):
     os.remove(name)
 
 def pull_mod_from_github(savedRepo):
+    if saveData["githubMods"] == False:
+        return
     repo = savedRepo.replace("github-", "")
     githubURL = "https://github.com/" + repo
+    api_commits_url = f"https://api.github.com/repos/{repo}/commits/main"
     currentCommit = saveData.get(savedRepo, "0")
     print_with_timestamp(f"Checking for Updates from: {repo}")
     response = requests.get(githubURL, stream=True)
     if response.status_code == 200:
-        latest_commit = response.json()["sha"]
-        if currentCommit != latest_commit:
-            save_field(savedRepo, latest_commit)
-            print(f"Update to latest commit: {latest_commit}")
-            if response.status_code == 200 and 'content-type' in response.headers and 'application/zip' in response.headers['content-type']:
-                zip_path = os.path.join(saveData["managedDir"], "")
-                with open(zip_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=1024):
-                        f.write(chunk)
-                shutil.unpack_archive(zip_path, saveData["managedDir"])
-                os.remove(zip_path)
-                print("Downloaded and extracted successfully!")
+        response = requests.get(api_commits_url)
+        if response.status_code == 200:
+            commit_data = response.json()
+            # The API may return a dict or a list depending on repo settings
+            if isinstance(commit_data, dict) and "sha" in commit_data:
+                latest_commit = commit_data["sha"]
+            elif isinstance(commit_data, list) and len(commit_data) > 0 and "sha" in commit_data[0]:
+                latest_commit = commit_data[0]["sha"]
             else:
-                print("Invalid URL or not a zip file.")
+                print_with_timestamp("Could not find commit SHA in API response.")
+                return
+        elif response.status_code == 403:
+            print_with_timestamp(f"Github API rate limit exceeded. Please try again later.")
+            return
         else:
-            print("Already up-to-date with the latest commit.")
+            print_with_timestamp(f"Failed to fetch commits from: {api_commits_url} (status {response.status_code})")
+            return
+
+        mod_exists_locally = os.path.isdir(saveData["managedDir"] + "/github-mods/" + split_consistent_dir(repo)[1] + "-main")
+        if currentCommit != latest_commit or not mod_exists_locally:
+            save_field(savedRepo, latest_commit)
+            if mod_exists_locally:
+                print_with_timestamp(f"Current Commit is out of date, Updating to latest commit: {latest_commit}")
+            else:
+                print_with_timestamp(f"Mod not found locally, Downloading latest commit: {latest_commit}")
+            zip_url = githubURL + "/archive/refs/heads/main.zip"
+            zip_dir = os.path.join(saveData["managedDir"], "github-mods")
+            os.makedirs(zip_dir, exist_ok=True)
+            mod_folder_name = f"{repo.replace('/', '_')}-main"
+            mod_folder_path = os.path.join(zip_dir, mod_folder_name)
+            # Delete old installation if it exists
+            if os.path.isdir(mod_folder_path):
+                try:
+                    shutil.rmtree(mod_folder_path)
+                    print_with_timestamp(f"Deleted old installation at {mod_folder_path}")
+                except Exception as e:
+                    print_with_timestamp(f"Failed to delete old installation: {e}")
+            zip_path = os.path.join(zip_dir, f"{repo.replace('/', '_')}_main.zip")
+            try:
+                zip_response = requests.get(zip_url, stream=True)
+                if zip_response.status_code == 200:
+                    with open(zip_path, 'wb') as f:
+                        for chunk in zip_response.iter_content(chunk_size=1024):
+                            f.write(chunk)
+                    shutil.unpack_archive(zip_path, zip_dir)
+                    os.remove(zip_path)
+                    print_with_timestamp("Downloaded and extracted successfully to github-mods!")
+                else:
+                    print_with_timestamp("Failed to download zip from: " + zip_url)
+            except Exception as e:
+                print_with_timestamp(f"Error downloading or extracting zip: {e}")
+        else:
+            print_with_timestamp("Already up-to-date with the latest commit")
     else:
-        print("Failed to fetch the latest commit. Please check the repository name.")
+        print_with_timestamp("Failed to fetch the Repository")
 
 def backup_mods(wipeModFolder=False, forceBackup=False):
+    # Pull Github Mods
+    github_save_data = {key: value for key, value in saveData.items() if key.startswith("github-")}
+    if len(github_save_data) > 0:
+        print_with_timestamp(f"Pulling Github Mods...")
+        for key, value in github_save_data.items():
+            pull_mod_from_github(key)
+    # Actual Back-up Stuffs
     dir = return_consistent_dir(APPDATA_DIR + "/mods")
     if not saveData["autoBackup"]:
         if not forceBackup:
@@ -342,11 +385,6 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
             shutil.copytree(dir, saveData["managedDir"] + "/.backup", dirs_exist_ok=True, copy_function=copier.copy)
         print_with_timestamp("Moving " + NAME_SM64COOPDX + "'s Install Mods Folder to Defaults...")
         shutil.move(dir, saveData["managedDir"] + "/default")
-    # Pull Github Mods
-    print_with_timestamp(f"Pulling Github Mods...")
-    github_save_data = {key: value for key, value in saveData.items() if key.startswith("github-")}
-    for key, value in github_save_data.items():
-        repo = key.replace("github-", "")
 
 # Backup on Bootup
 clear_with_header()
@@ -495,7 +533,7 @@ def config_managed_dir():
 ## Automatic Menu Creation ##
 #############################
 
-def menu_option_name_with_toggle(name="Option", toggle=True, dots=-1):
+def menu_option_name_with_toggle(name="Option", toggle=True, length=SUB_HEADER_LENGTH_DEFAULT):
     toggleString = ""
     if isinstance(toggle, bool):
         if toggle:
@@ -505,8 +543,7 @@ def menu_option_name_with_toggle(name="Option", toggle=True, dots=-1):
     else:
         toggleString = "(" + str(toggle) + ")"
 
-    if dots < 0:
-        dots = SUB_HEADER_LENGTH_DEFAULT - (len(name) + len(str(toggleString)) + 4)
+    dots = length - (len(name) + len(str(toggleString)) + 4)
     if dots < 0:
         dots = 0
 
@@ -548,15 +585,6 @@ def menu_input():
 ####################
 ## Menu Functions ##
 ####################
-
-def menu_toggle_backup():
-    toggle_save_field("autoBackup")
-def menu_toggle_chime():
-    toggle_save_field("loadChime")
-def menu_manager_toggle_dirs():
-    toggle_save_field("showDirs")
-def menu_toggle_uncomp_files():
-    toggle_save_field("skipUncompiled")
 
 def menu_main_open_coop():
     while(True):
@@ -648,21 +676,36 @@ def menu_mod_github_config():
         if len(github_save_data) < 1:
             print("No Auto-Update Mods Configured")
         else:
-            sub_header("Auto-Update Mods:")
+            repoNum = 0
+            sub_header("Auto-Update Mods")
             for key, value in github_save_data.items():
+                repoNum = repoNum + 1
                 repo = key.replace("github-", "")
-                print(f"{repo} - ({value})")
+                print(f"{repoNum}. {menu_option_name_with_toggle(repo, value != -1, 40)}")
             print()
         print("Type a valid github repository to add it, (ex. Squishy6094/character-select-coop)")
+        print("Type an already added repo name/number to toggle checking.")
         print("Type 'back' to return to " + NAME_MODS_MENU)
         prompt1 = input("> ")
         if prompt1.lower() == "back":
             break
+        else:
+            repoNum = 0
+            for x in github_save_data:
+                repoNum = repoNum + 1
+                repoNumString = str(repoNum)
+                if prompt1 == repoNumString or prompt1.lower() == x.replace("github-", "").lower():
+                    repoOnOff = False
+                    try:
+                        repoOnOff = saveData["mods-" + x] != -1
+                    except:
+                        repoOnOff = True
+                    save_field(x, (repoOnOff and 0 or -1))
         try:
             githubURL = "https://github.com/" + prompt1
             response = requests.get(githubURL, stream=True)
             if response.status_code == 200:
-                save_field("github-" + prompt1, "0")
+                pull_mod_from_github("github-" + prompt1)
             else:
                 print("Invalid Repository")
         except Exception as e:
@@ -731,24 +774,13 @@ def watchdog_mode(skipPrompt=False):
 def menu_mod_config_settings():
     while(True):
         clear_with_header()
-        sub_header("Management Settings:")
+        sub_header("Management Settings")
         menu_clear()
-        menu_option_add(menu_option_name_with_toggle("Auto-Backup", saveData["autoBackup"]), menu_toggle_backup)
-        menu_option_add(menu_option_name_with_toggle("Load Chime", saveData["loadChime"]), menu_toggle_chime)
-        menu_option_add(menu_option_name_with_toggle("Uncompiled Files", (not saveData["skipUncompiled"])), menu_toggle_uncomp_files)
+        menu_option_add(menu_option_name_with_toggle("Auto-Backup", saveData["autoBackup"]), toggle_save_field("autoBackup"))
+        menu_option_add(menu_option_name_with_toggle("Load Chime", saveData["loadChime"]), toggle_save_field("loadChime"))
+        menu_option_add(menu_option_name_with_toggle("Uncompiled Files", (not saveData["skipUncompiled"])), toggle_save_field("skipUncompiled"))
+        menu_option_add(menu_option_name_with_toggle("Github Mods", (saveData["githubMods"])), toggle_save_field("githubMods"))
         
-        expectedLoadTime = 0
-        if saveData["autoBackup"]:
-            expectedLoadTime = expectedLoadTime + 1
-        if not saveData["skipUncompiled"]:
-            expectedLoadTime = expectedLoadTime + 1
-        if expectedLoadTime == 0:
-            expectedLoadTime = "Low"
-        elif expectedLoadTime == 1:
-            expectedLoadTime = "Medium"
-        else:
-            expectedLoadTime = "High"
-        print("Management Time: " + expectedLoadTime)
         sub_header()
         menu_option_add("Back", menu_back)
         if menu_input():
@@ -822,7 +854,7 @@ def menu_manager_link_central():
 def menu_manager_links():
     while(True):
         clear_with_header()
-        sub_header("Support Links:")
+        sub_header("Support Links")
         menu_clear()
         menu_option_add(NAME_MANAGER + " - Issue Reporting - (Github)", menu_manager_link_github)
         menu_option_add("Squishy Community - Manager Support - (Discord)", menu_manager_link_community)
@@ -840,7 +872,7 @@ def menu_main_manager_options():
         menu_option_add(NAME_SM64COOPDX + " Executible Path", config_coop_dir)
         menu_option_add(NAME_MANAGER_MODS + " Directory", config_managed_dir)
         sub_header(NAME_MANAGER_SETTINGS_AND_HELP)
-        menu_option_add(menu_option_name_with_toggle("Streamer Mode", (not saveData["showDirs"])), menu_manager_toggle_dirs)
+        menu_option_add(menu_option_name_with_toggle("Streamer Mode", (not saveData["showDirs"])), toggle_save_field("showDirs"))
         menu_option_add("Info", menu_manager_info)
         menu_option_add("Support Links", menu_manager_links)
         sub_header()
