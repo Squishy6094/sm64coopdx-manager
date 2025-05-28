@@ -222,6 +222,7 @@ saveData = {
     "showDirs": True,
     "githubMods": True,
     "skipUncompiled": False,
+    "githubToken": "",
     "mods-.backup": False,
 }
 saveData = read_or_new_save(SAVE_DIR, saveData)
@@ -531,6 +532,21 @@ def config_managed_dir():
             return False
         else:
             print("Directory not found, please enter a valid directory")
+
+def config_github_token():
+    clear_with_header()
+    print("Configure your GitHub Personal Access Token for API requests.")
+    print("Enter your GitHub Personal Access Token:")
+    token = input("> ")
+    if token:
+        save_field("githubToken", token)
+        print("GitHub token saved.")
+    else:
+        if "githubToken" in saveData:
+            save_field("githubToken", "")
+        print("GitHub token removed.")
+    input("Press Enter to return to the previous menu.")
+    return False
 
 #############################
 ## Automatic Menu Creation ##
@@ -876,6 +892,7 @@ def menu_main_manager_options():
         menu_option_add(NAME_MANAGER_MODS + " Directory", config_managed_dir)
         sub_header(NAME_MANAGER_SETTINGS_AND_HELP)
         menu_option_add(menu_option_name_with_toggle("Streamer Mode", (not saveData["showDirs"])), toggle_save_field("showDirs"))
+        menu_option_add(menu_option_name_with_toggle("Github Token", (saveData["githubToken"] != "")), config_github_token)
         menu_option_add("Info", menu_manager_info)
         menu_option_add("Support Links", menu_manager_links)
         sub_header()
