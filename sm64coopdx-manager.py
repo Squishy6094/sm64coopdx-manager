@@ -15,6 +15,7 @@ import fnmatch
 
 PLATFORM_WINDOWS = "Windows"
 PLATFORM_LINUX = "Linux"
+PLATFORM_MAC = "Darwin"
 def platform_is_windows():
     systemName = platform.system()
     # Get Platform's Appdata Folder
@@ -22,13 +23,12 @@ def platform_is_windows():
         return True
     elif systemName == PLATFORM_LINUX:
         return False
+    elif systemName == PLATFORM_MAC:
+        return False
     else:
-        print(systemName)
-        """
         print("SM64CoopDX Manager is not supported on your Operating System")
         input("Press Enter to Close Program")
         exit()
-        """
 
 
 # Clear Console
