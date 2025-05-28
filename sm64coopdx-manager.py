@@ -23,9 +23,12 @@ def platform_is_windows():
     elif systemName == PLATFORM_LINUX:
         return False
     else:
+        print(systemName)
+        """
         print("SM64CoopDX Manager is not supported on your Operating System")
         input("Press Enter to Close Program")
         exit()
+        """
 
 
 # Clear Console
