@@ -348,12 +348,6 @@ def pull_mod_from_github(savedRepo):
         print_with_timestamp("Failed to fetch the Repository")
 
 def backup_mods(wipeModFolder=False, forceBackup=False):
-    # Pull Github Mods
-    github_save_data = {key: value for key, value in saveData.items() if key.startswith("github-")}
-    if len(github_save_data) > 0:
-        print_with_timestamp(f"Pulling Github Mods...")
-        for key, value in github_save_data.items():
-            pull_mod_from_github(key)
     # Actual Back-up Stuffs
     dir = return_consistent_dir(APPDATA_DIR + "/mods")
     if not saveData["autoBackup"]:
@@ -393,6 +387,13 @@ def backup_mods(wipeModFolder=False, forceBackup=False):
 # Backup on Bootup
 clear_with_header()
 backup_mods(False)
+
+# Pull Github Mods
+github_save_data = {key: value for key, value in saveData.items() if key.startswith("github-")}
+if len(github_save_data) > 0:
+    print_with_timestamp(f"Pulling Github Mods...")
+    for key, value in github_save_data.items():
+        pull_mod_from_github(key)
 
 def include_patterns(*patterns):
     def _ignore_patterns(path, names):
