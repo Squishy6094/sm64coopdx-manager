@@ -9,7 +9,7 @@ import json
 import webbrowser
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 import platform
 import fnmatch
 
@@ -199,7 +199,8 @@ def sub_header(headerText="|", length=SUB_HEADER_LENGTH_DEFAULT):
     print(subheaderText)
 
 def print_with_timestamp(string):
-    return print(str(datetime.now().time()) + " - " + string)
+    now = datetime.now(timezone.utc).astimezone()
+    return print(now.strftime("%H:%M:%S.%f")[:-3] + f" - " + string)
 
 def read_or_new_save(path, default):
     if os.path.isfile(path):
