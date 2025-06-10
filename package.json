@@ -1,0 +1,23 @@
+{
+  "name": "SM64CoopDX Manager",
+  "version": "1.0.0",
+  "description": "A Launcher for SM64CoopDX",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "coopdx"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Squishy6094/sm64coopdx-manager.git"
+  },
+  "author": "Squishy6094",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Squishy6094/sm64coopdx-manager/issues"
+  },
+  "homepage": "https://github.com/Squishy6094/sm64coopdx-manager#readme",
+  "devDependencies": {
+    "electron": "^36.4.0"
+  }
+}

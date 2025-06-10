@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Embed -->
+    <title>SM64CoopDX Manager</title>
+    <!-- 
+    <link rel="icon" type="image/x-icon" href="images/icons/hat-logo.png">
+    <meta property="og:image" content="https://squishy6094.github.io/images/icons/hat-logo.png">
+    -->
+    <style>
+        body {
+            background-color: #000;
+        }
+    </style>
+</head>
+
+<script type="text/javascript" src="djui-js/djui.js"></script>
+<script type="text/javascript">
+    function djui_hud_print_text_centered(text, x, y, scale) {
+        var textWidth = djui_hud_measure_text(text) * scale;
+        djui_hud_print_text(text, x - textWidth * 0.5, y, scale);
+    }
+
+    function djui_hud_render_centered_button(text, x, y, width, height) {
+        djui_hud_set_color(255, 255, 255, 255)
+        djui_hud_render_rect(x - width*0.5, y - height*0.5, width, height)
+        djui_hud_set_color(0, 0, 0, 255)
+        djui_hud_print_text_centered(text, x, y - 10, 1)
+    }
+
+    let timer = 0
+    function hud_render() {
+        timer = timer + 1;
+        djui_hud_set_resolution(RESOLUTION_DJUI);
+        screenWidth = djui_hud_get_screen_width();
+        screenHeight = djui_hud_get_screen_height();
+
+        djui_hud_set_rotation(0, 0, 0);
+        djui_hud_set_color(255, 255, 255, 255);
+        text = "SM64CoopDX Manager - Powered by Electron"
+        djui_hud_print_text(text, screenWidth - 10 - djui_hud_measure_text(text), screenHeight - 32, 1)
+        djui_hud_render_centered_button("Open SM64CoopDX", screenWidth*0.5, screenHeight*0.5, 300, 100)
+    }
+
+    hook_event(hud_render);   
+</script>
+</html> 
