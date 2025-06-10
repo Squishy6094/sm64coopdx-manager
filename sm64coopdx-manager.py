@@ -223,7 +223,6 @@ saveData = {
     "showDirs": True,
     "githubMods": True,
     "skipUncompiled": False,
-    "githubToken": "",
     "mods-.backup": False,
 }
 saveData = read_or_new_save(SAVE_DIR, saveData)
@@ -289,7 +288,6 @@ def pull_mod_from_github(savedRepo):
     githubURL = "https://github.com/" + repo
     api_commits_url = f"https://api.github.com/repos/{repo}/commits/main"
     currentCommit = saveData.get(savedRepo, "0")
-    print_with_timestamp(f"Checking for Updates from: {repo}")
     response = requests.get(githubURL, stream=True)
     if response.status_code == 200:
         response = requests.get(api_commits_url)
@@ -301,11 +299,11 @@ def pull_mod_from_github(savedRepo):
             elif isinstance(commit_data, list) and len(commit_data) > 0 and "sha" in commit_data[0]:
                 latest_commit = commit_data[0]["sha"]
             else:
-                print_with_timestamp("Could not find commit SHA in API response.")
+                print_with_timestamp(f"{repo} Could not find commit SHA in API response.")
                 return
         elif response.status_code == 403:
             print_with_timestamp(f"Github API rate limit exceeded. Please try again later.")
-            return
+            return True
         else:
             print_with_timestamp(f"Failed to fetch commits from: {api_commits_url} (status {response.status_code})")
             return
@@ -314,9 +312,9 @@ def pull_mod_from_github(savedRepo):
         if currentCommit != latest_commit or not mod_exists_locally:
             save_field(savedRepo, latest_commit)
             if mod_exists_locally:
-                print_with_timestamp(f"Current Commit is out of date, Updating to latest commit: {latest_commit}")
+                print_with_timestamp(f"{repo} - Updating to Latest Commit")
             else:
-                print_with_timestamp(f"Mod not found locally, Downloading latest commit: {latest_commit}")
+                print_with_timestamp(f"{repo} - Reintalling Mod")
             zip_url = githubURL + "/archive/refs/heads/main.zip"
             zip_dir = os.path.join(saveData["managedDir"], "github-mods")
             os.makedirs(zip_dir, exist_ok=True)
@@ -326,9 +324,8 @@ def pull_mod_from_github(savedRepo):
             if os.path.isdir(mod_folder_path):
                 try:
                     shutil.rmtree(mod_folder_path)
-                    print_with_timestamp(f"Deleted old installation at {mod_folder_path}")
                 except Exception as e:
-                    print_with_timestamp(f"Failed to delete old installation: {e}")
+                    print_with_timestamp(f"{repo} - Failed to Delete old Installation")
             zip_path = os.path.join(zip_dir, f"{repo.replace('/', '_')}_main.zip")
             try:
                 zip_response = requests.get(zip_url, stream=True)
@@ -338,15 +335,14 @@ def pull_mod_from_github(savedRepo):
                             f.write(chunk)
                     shutil.unpack_archive(zip_path, zip_dir)
                     os.remove(zip_path)
-                    print_with_timestamp("Downloaded and extracted successfully to github-mods!")
                 else:
-                    print_with_timestamp("Failed to download zip from: " + zip_url)
+                    print_with_timestamp(f"{repo} - Failed to download zip from: " + zip_url)
             except Exception as e:
-                print_with_timestamp(f"Error downloading or extracting zip: {e}")
+                print_with_timestamp(f"{repo} - Error downloading or extracting zip: {e}")
         else:
-            print_with_timestamp("Already up-to-date with the latest commit")
+            print_with_timestamp(f"{repo} - Already on Latest Commit")
     else:
-        print_with_timestamp("Failed to fetch the Repository")
+        print_with_timestamp(f"{repo} - Failed to Fetch Repository")
 
 def backup_mods(wipeModFolder=False, forceBackup=False):
     # Actual Back-up Stuffs
@@ -392,9 +388,15 @@ backup_mods(False)
 # Pull Github Mods
 github_save_data = {key: value for key, value in saveData.items() if key.startswith("github-")}
 if len(github_save_data) > 0:
-    print_with_timestamp(f"Pulling Github Mods...")
-    for key, value in github_save_data.items():
-        pull_mod_from_github(key)
+    print_with_timestamp(f"Checking for Github Mod Updates")
+    print_with_timestamp(f"Press Ctrl + C to Skip")
+    try:
+        for key, value in github_save_data.items():
+            if pull_mod_from_github(key):
+                break
+    except KeyboardInterrupt:
+        print_with_timestamp("Skipping Github Mod Update Check")
+        pass
 
 def include_patterns(*patterns):
     def _ignore_patterns(path, names):
@@ -534,21 +536,6 @@ def config_managed_dir():
             return False
         else:
             print("Directory not found, please enter a valid directory")
-
-def config_github_token():
-    clear_with_header()
-    print("Configure your GitHub Personal Access Token for API requests.")
-    print("Enter your GitHub Personal Access Token:")
-    token = input("> ")
-    if token:
-        save_field("githubToken", token)
-        print("GitHub token saved.")
-    else:
-        if "githubToken" in saveData:
-            save_field("githubToken", "")
-        print("GitHub token removed.")
-    input("Press Enter to return to the previous menu.")
-    return False
 
 #############################
 ## Automatic Menu Creation ##
@@ -837,7 +824,7 @@ def menu_manager_info():
     clear_with_header()
     sub_header("Manager Info")
     print(NAME_MANAGER + " by Squishy6094")
-    print("Version " + VERSION + " / Github Version " + str(github_version_check()).replace("v", ""))
+    print("Version " + VERSION + " / Github Version " + str(GITHUB_UPDATE).replace("v", ""))
     sub_header("User Info")
     # Executible Exists
     if os.path.isfile(saveData["coopDir"]):
@@ -894,7 +881,6 @@ def menu_main_manager_options():
         menu_option_add(NAME_MANAGER_MODS + " Directory", config_managed_dir)
         sub_header(NAME_MANAGER_SETTINGS_AND_HELP)
         menu_option_add(menu_option_name_with_toggle("Streamer Mode", (not saveData["showDirs"])), toggle_save_field("showDirs"))
-        menu_option_add(menu_option_name_with_toggle("Github Token", (saveData["githubToken"] != "")), config_github_token)
         menu_option_add("Info", menu_manager_info)
         menu_option_add("Support Links", menu_manager_links)
         sub_header()
