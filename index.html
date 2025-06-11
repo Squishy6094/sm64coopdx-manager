@@ -21,7 +21,7 @@
     function mouse_over_area(x, y, width, height, clickFunc) {
         mouseX = djui_hud_get_mouse_x()
         mouseY = djui_hud_get_mouse_y()
-        console.log(mouseX + " " + mouseY)
+        log(mouseX + " " + mouseY)
         inBox = (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height)
         if (inBox && djui_hud_get_mouse_buttons_pressed() && clickFunc != null) {
             clickFunc()
@@ -39,7 +39,7 @@
         rawY = y
         x = x - width*0.5
         y = y - height*0.5
-        if (mouse_over_area(x, y, width, height, window.electronAPI.openCoop)) {
+        if (mouse_over_area(x, y, width, height, window.electronAPI.bootCoop)) {
             djui_hud_set_color(200, 200, 200, 255)
         } else {
             djui_hud_set_color(255, 255, 255, 255)
@@ -50,6 +50,7 @@
     }
 
     let timer = 0
+    let prevLog = ""
     function hud_render() {
         timer = timer + 1;
         djui_hud_set_resolution(RESOLUTION_DJUI);
@@ -60,6 +61,10 @@
         djui_hud_set_color(255, 255, 255, 255);
         text = "SM64CoopDX Manager - Powered by Electron"
         djui_hud_print_text(text, screenWidth - 10 - djui_hud_measure_text(text), screenHeight - 32, 1)
+        window.electronAPI.getLatestLog().then(log => {
+            prevLog = log;
+        });
+        djui_hud_print_text(prevLog, screenWidth - 10 - djui_hud_measure_text(prevLog), screenHeight - 64, 1)
         djui_hud_render_centered_button(window.electronAPI.coopIsOpen() ? "Coop is Open" : "Open SM64CoopDX", screenWidth*0.5, screenHeight*0.5, 300, 100)
     }
 

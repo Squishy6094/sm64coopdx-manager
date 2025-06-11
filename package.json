@@ -19,5 +19,11 @@
   "homepage": "https://github.com/Squishy6094/sm64coopdx-manager#readme",
   "devDependencies": {
     "electron": "^36.4.0"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "ncp": "^2.0.0",
+    "node-fetch": "^3.3.2",
+    "unzipper": "^0.12.3"
   }
 }

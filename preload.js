@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  openCoop: () => ipcRenderer.send('open-coop'),
-  coopIsOpen: () => ipcRenderer.send('coop-is-open')
+  bootCoop: () => ipcRenderer.send('boot-coop'),
+  coopIsOpen: () => ipcRenderer.send('coop-is-open'),
+  getLatestLog: () => ipcRenderer.invoke('latest-log'),
 });
